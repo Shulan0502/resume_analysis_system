@@ -1,0 +1,358 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes line-stretch {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 200px; /* Increased width to extend further */
+  }
+}
+
+@keyframes bubble-float {
+  0% {
+    transform: translateY(0) scale(0.5);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-60px) scale(1); /* Increased upward movement */
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120px) scale(0.5); /* Increased upward movement and fade out */
+    opacity: 0;
+  }
+}
+
+.animate-line-stretch {
+  animation: line-stretch 2s ease-in-out infinite alternate;
+}
+
+.animate-bubble-float {
+  animation: bubble-float 3s ease-out infinite;
+}
+
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f0f2f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* 聊天历史模态框样式 */
+.chat-history-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+  max-height: 80vh;
+}
+
+.chat-history-modal .ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: none;
+  padding: 20px 24px;
+}
+
+.chat-history-modal .ant-modal-title {
+  color: white;
+}
+
+.chat-history-modal .ant-modal-close {
+  color: white;
+  top: 20px;
+  right: 20px;
+}
+
+.chat-history-modal .ant-modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-history-modal .ant-modal-body {
+  padding: 0;
+  max-height: calc(80vh - 140px);
+  overflow: hidden;
+}
+
+.chat-history-modal .ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+  background: #fafafa;
+}
+
+/* 搜索高亮 */
+.chat-history-modal mark {
+  background-color: #fff3cd !important;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+/* 分组标题样式 */
+.chat-history-modal .group-title {
+  background: linear-gradient(90deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 8px;
+  padding: 8px 12px;
+  border-left: 4px solid #3b82f6;
+}
+
+/* 消息气泡样式增强 */
+.chat-history-modal .message-bubble {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.chat-history-modal .message-bubble:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 用户消息气泡 */
+.chat-history-modal .user-message {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* AI消息气泡 */
+.chat-history-modal .ai-message {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 统计卡片样式 */
+.stats-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 搜索框样式 */
+.chat-history-modal .ant-input-search {
+  border-radius: 8px;
+}
+
+.chat-history-modal .ant-input-search .ant-input {
+  border-radius: 8px 0 0 8px;
+  font-size: 14px;
+}
+
+.chat-history-modal .ant-input-search .ant-btn {
+  border-radius: 0 8px 8px 0;
+}
+
+/* 工具提示样式 */
+.ant-tooltip-inner {
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+/* 徽章样式 */
+.ant-badge-count {
+  border-radius: 10px;
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 空状态样式 */
+.empty-state {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.empty-state:hover {
+  opacity: 1;
+}
+
+/* 滚动条样式 */
+.chat-history-modal ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-history-modal ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.chat-history-modal ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.chat-history-modal ::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* 添加动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.animate-fade-in-up.delay-100 {
+  animation-delay: 0.1s;
+  animation-fill-mode: both;
+}
+
+.animate-fade-in-up.delay-200 {
+  animation-delay: 0.2s;
+  animation-fill-mode: both;
+}
+
+.animate-fade-in-up.delay-300 {
+  animation-delay: 0.3s;
+  animation-fill-mode: both;
+}
+
+.animate-fade-in-up.delay-400 {
+  animation-delay: 0.4s;
+  animation-fill-mode: both;
+}
+
+.animate-fade-in-up.delay-500 {
+  animation-delay: 0.5s;
+  animation-fill-mode: both;
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* 粘性标题背景模糊效果 */
+.sticky-header {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.custom-radio-btn {
+  transition: all 0.2s;
+  border: 1.5px solid #e0e7ff !important;
+  background: #f8fafc !important;
+  color: #6366f1 !important;
+  margin: 0 8px !important;
+  border-radius: 1rem !important;
+  box-shadow: 0 2px 8px 0 #e0e7ff33;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.6rem 2.2rem;
+  min-width: 130px;
+  min-height: 44px;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.custom-radio-btn > span {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  width: 100%;
+}
+.ant-radio-button-wrapper-checked.custom-radio-btn {
+  background: linear-gradient(90deg, #6366f1 0%, #a78bfa 100%) !important;
+  color: #fff !important;
+  border-color: #a78bfa !important;
+  box-shadow: 0 2px 8px 0 #a78bfa33;
+}

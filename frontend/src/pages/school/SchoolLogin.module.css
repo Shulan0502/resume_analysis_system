@@ -1,0 +1,30 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1890ff 0%, #722ed1 100%);
+}
+
+.loginBox {
+  width: 400px;
+  padding: 40px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 40px;
+  color: #1890ff;
+  font-size: 28px;
+}
+
+.form {
+  width: 100%;
+}
+
+.loginButton {
+  margin-top: 24px;
+} 

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+**/node_modules
+frontend/node_modules
+frontend2/node_modules
+
+# Build outputs
+target
+build
+dist
+**/target
+**/dist
+
+# Uploads (user data)
+uploads
+
+# Cache
+**/.npm-cache
+**/npm-cache
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.cache
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation files (root level)
+/*.md
+!README.md
+learning_memory_service.py
+.trae

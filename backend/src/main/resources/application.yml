@@ -1,0 +1,29 @@
+server:
+  port: 8081
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: ai-chat-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/job_graph?charSet=UTF-8&useUnicode=true&characterEncoding=UTF-8
+    username: postgres
+    password: "123456@"
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: SET NAMES 'UTF8';
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+logging:
+  level:
+    com.black: DEBUG
