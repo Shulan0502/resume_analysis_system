@@ -299,5 +299,638 @@ def apply_for_job():
     data = request.get_json()
     return jsonify({'success': True, 'message': '简历投递成功！'})
 
+# ==================== 视频分析相关 API ====================
+@app.route('/api/video/skill-assessment', methods=['GET'])
+def get_skill_assessment():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT id, interview_type, overall_score, status, created_at FROM interview_records WHERE user_id = 1 ORDER BY created_at DESC LIMIT 5')
+        records = cur.fetchall()
+        
+        recent_interviews = []
+        for row in records:
+            recent_interviews.append({
+                'key': str(row[0]),
+                'date': str(row[4])[:10],
+                'type': row[1],
+                'score': row[2],
+                'status': row[3]
+            })
+        
+        return jsonify({
+            'success': True,
+            'analysisId': 1,
+            'createdAt': '2024-01-15 10:30:00',
+            'skillScores': [
+                {'name': '沟通表达', 'score': 85, 'color': '#1890ff', 'description': '表达清晰，逻辑连贯'},
+                {'name': '技术能力', 'score': 78, 'color': '#52c41a', 'description': '基础扎实，有待提升'},
+                {'name': '逻辑思维', 'score': 92, 'color': '#722ed1', 'description': '思维敏捷，分析透彻'},
+                {'name': '团队协作', 'score': 88, 'color': '#13c2c2', 'description': '善于沟通协作'},
+                {'name': '应变能力', 'score': 75, 'color': '#fa8c16', 'description': '有待加强'}
+            ],
+            'recentInterviews': recent_interviews
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/video/interview-records', methods=['GET'])
+def get_interview_records():
+    page = int(request.args.get('page', 1))
+    size = int(request.args.get('size', 10))
+    status_filter = request.args.get('status')
+    type_filter = request.args.get('type')
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        query = '''
+            SELECT id, user_id, video_url, interview_type, interviewer, company, 
+                   position, duration, status, overall_score, strengths, weaknesses, 
+                   improvements, recommendations, feedback, analysis_url, created_at, updated_at
+            FROM interview_records 
+            WHERE user_id = 1
+        '''
+        count_query = 'SELECT COUNT(*) FROM interview_records WHERE user_id = 1'
+        params = []
+        
+        if status_filter:
+            query += ' AND status = %s'
+            count_query += ' AND status = %s'
+            params.append(status_filter)
+        if type_filter:
+            query += ' AND interview_type = %s'
+            count_query += ' AND interview_type = %s'
+            params.append(type_filter)
+        
+        query += ' ORDER BY created_at DESC LIMIT %s OFFSET %s'
+        params.extend([size, (page - 1) * size])
+        
+        cur.execute(count_query, params[:-2] if params else None)
+        total_count = cur.fetchone()[0]
+        
+        cur.execute(query, params)
+        records = []
+        for row in cur.fetchall():
+            records.append({
+                'id': str(row[0]),
+                'date': str(row[16])[:10],
+                'type': row[3],
+                'position': row[6],
+                'score': row[9],
+                'status': row[8],
+                'duration': row[7],
+                'videoUrl': row[2],
+                'analysisUrl': row[15],
+                'createdAt': str(row[16]),
+                'updatedAt': str(row[17]),
+                'details': {
+                    'overallScore': row[9],
+                    'feedback': row[14],
+                    'strengths': row[10] if row[10] else [],
+                    'improvements': row[12] if row[12] else [],
+                    'recommendations': row[13] if row[13] else [],
+                    'interviewer': row[4],
+                    'company': row[5]
+                }
+            })
+        
+        total_pages = (total_count + size - 1) // size
+        
+        return jsonify({
+            'success': True,
+            'records': records,
+            'totalCount': total_count,
+            'totalPages': total_pages,
+            'currentPage': page
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/video/interview-records/<string:record_id>', methods=['GET'])
+def get_interview_record_detail(record_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT id, user_id, video_url, interview_type, interviewer, company, 
+                   position, duration, status, overall_score, strengths, weaknesses, 
+                   improvements, recommendations, feedback, analysis_url, created_at, updated_at
+            FROM interview_records 
+            WHERE id = %s
+        ''', (record_id,))
+        row = cur.fetchone()
+        
+        if row:
+            return jsonify({
+                'id': str(row[0]),
+                'date': str(row[16])[:10],
+                'type': row[3],
+                'position': row[6],
+                'score': row[9],
+                'status': row[8],
+                'duration': row[7],
+                'videoUrl': row[2],
+                'analysisUrl': row[15],
+                'createdAt': str(row[16]),
+                'updatedAt': str(row[17]),
+                'details': {
+                    'overallScore': row[9],
+                    'feedback': row[14],
+                    'strengths': row[10] if row[10] else [],
+                    'improvements': row[12] if row[12] else [],
+                    'recommendations': row[13] if row[13] else [],
+                    'interviewer': row[4],
+                    'company': row[5]
+                }
+            })
+        else:
+            return jsonify({'success': False, 'error': '记录不存在'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/video/interview-records/<string:record_id>', methods=['DELETE'])
+def delete_interview_record(record_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('DELETE FROM interview_records WHERE id = %s', (record_id,))
+        conn.commit()
+        return jsonify({'success': True, 'message': '删除成功'})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+# ==================== 学习资源相关 API ====================
+@app.route('/api/resources/stats', methods=['GET'])
+def get_resource_stats():
+    user_id = request.args.get('userId', '1')
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # 获取统计数据
+        cur.execute('SELECT COUNT(*) FROM learning_resources WHERE status = %s', ('active',))
+        total_resources = cur.fetchone()[0]
+        
+        cur.execute('SELECT COUNT(*) FROM learning_resources WHERE is_free = TRUE AND status = %s', ('active',))
+        free_count = cur.fetchone()[0]
+        
+        cur.execute('SELECT COUNT(*) FROM learning_resources WHERE is_free = FALSE AND status = %s', ('active',))
+        paid_count = cur.fetchone()[0]
+        
+        cur.execute('SELECT category, COUNT(*) FROM learning_resources WHERE status = %s GROUP BY category', ('active',))
+        category_stats = []
+        for row in cur.fetchall():
+            category_stats.append({'name': row[0], 'value': row[1]})
+        
+        cur.execute('SELECT AVG(rating) FROM learning_resources WHERE status = %s', ('active',))
+        avg_rating = cur.fetchone()[0] or 0
+        
+        return jsonify({
+            'success': True,
+            'totalResources': total_resources,
+            'freeCount': free_count,
+            'paidCount': paid_count,
+            'categoryStats': category_stats,
+            'avgRating': round(float(avg_rating), 2)
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/resources/all', methods=['GET'])
+def get_all_resources():
+    page = int(request.args.get('page', 1))
+    size = int(request.args.get('size', 12))
+    category = request.args.get('category')
+    resource_type = request.args.get('type')
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        query = '''
+            SELECT id, title, author, category, resource_type, description, 
+                   url, thumbnail_url, duration, difficulty_level, is_free, 
+                   price, rating, tags, status, view_count, created_at, updated_at
+            FROM learning_resources 
+            WHERE status = %s
+        '''
+        count_query = 'SELECT COUNT(*) FROM learning_resources WHERE status = %s'
+        params = ['active']
+        
+        if category:
+            query += ' AND category = %s'
+            count_query += ' AND category = %s'
+            params.append(category)
+        if resource_type:
+            query += ' AND resource_type = %s'
+            count_query += ' AND resource_type = %s'
+            params.append(resource_type)
+        
+        query += ' ORDER BY created_at DESC LIMIT %s OFFSET %s'
+        params.extend([size, (page - 1) * size])
+        
+        cur.execute(count_query, params[:-2] if len(params) > 2 else params)
+        total_count = cur.fetchone()[0]
+        
+        cur.execute(query, params)
+        resources = []
+        for row in cur.fetchall():
+            resources.append({
+                'id': str(row[0]),
+                'title': row[1],
+                'author': row[2],
+                'category': row[3],
+                'resourceType': row[4],
+                'description': row[5],
+                'url': row[6],
+                'thumbnailUrl': row[7],
+                'duration': row[8],
+                'difficultyLevel': row[9],
+                'isFree': row[10],
+                'price': float(row[11]) if row[11] else 0,
+                'rating': float(row[12]) if row[12] else 0,
+                'tags': row[13].split(',') if row[13] else [],
+                'status': row[14],
+                'viewCount': row[15],
+                'createdAt': str(row[16]),
+                'updatedAt': str(row[17])
+            })
+        
+        total_pages = (total_count + size - 1) // size
+        
+        return jsonify({
+            'success': True,
+            'message': '操作成功',
+            'data': {
+                'resources': resources,
+                'total': total_count,
+                'totalCount': total_count,
+                'totalPages': total_pages,
+                'currentPage': page,
+                'pageSize': size
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+# ==================== 个性化推荐资源API ====================
+
+@app.route('/api/resources/recommendations', methods=['GET'])
+def get_recommendations():
+    """获取个性化推荐资源列表"""
+    user_id = request.args.get('userId', '1')
+    page = int(request.args.get('page', 1))
+    size = int(request.args.get('size', 12))
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        query = '''
+            SELECT id, title, author, category, resource_type, description,
+                   url, thumbnail_url, duration, difficulty_level, is_free,
+                   price, rating, tags, status, view_count, created_at, updated_at
+            FROM learning_resources
+            WHERE status = %s
+            ORDER BY rating DESC, view_count DESC
+            LIMIT %s OFFSET %s
+        '''
+        
+        count_query = 'SELECT COUNT(*) FROM learning_resources WHERE status = %s'
+        
+        cur.execute(count_query, ('active',))
+        total_count = cur.fetchone()[0]
+        
+        cur.execute(query, ('active', size, (page - 1) * size))
+        resources = []
+        for row in cur.fetchall():
+            resources.append({
+                'id': str(row[0]),
+                'title': row[1],
+                'author': row[2],
+                'category': row[3],
+                'resourceType': row[4],
+                'description': row[5],
+                'url': row[6],
+                'thumbnailUrl': row[7],
+                'duration': row[8],
+                'difficultyLevel': row[9],
+                'isFree': row[10],
+                'price': float(row[11]) if row[11] else 0,
+                'rating': float(row[12]) if row[12] else 0,
+                'tags': row[13].split(',') if row[13] else [],
+                'status': row[14],
+                'viewCount': row[15],
+                'createdAt': str(row[16]),
+                'updatedAt': str(row[17]),
+                'priority': 5 - (len(resources) % 5),
+                'recommendationReason': '基于您的学习偏好，推荐学习此课程',
+                'recommendationScore': round(90 + (len(resources) * 2), 1)
+            })
+        
+        total_pages = (total_count + size - 1) // size
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'resources': resources,
+                'totalCount': total_count,
+                'totalPages': total_pages,
+                'currentPage': page,
+                'pageSize': size
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/resources/recommendations/generate', methods=['POST'])
+def generate_recommendations():
+    """生成个性化推荐"""
+    data = request.get_json()
+    user_id = data.get('userId')
+    interview_id = data.get('interviewId')
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # 获取用户的面试记录，分析薄弱环节
+        query = '''
+            SELECT id, title, author, category, resource_type, description,
+                   url, thumbnail_url, duration, difficulty_level, is_free,
+                   price, rating, tags, status, view_count, created_at, updated_at
+            FROM learning_resources
+            WHERE status = %s
+            ORDER BY rating DESC
+            LIMIT 6
+        '''
+        
+        cur.execute(query, ('active',))
+        resources = []
+        for row in cur.fetchall():
+            resources.append({
+                'id': str(row[0]),
+                'title': row[1],
+                'author': row[2],
+                'category': row[3],
+                'resourceType': row[4],
+                'description': row[5],
+                'url': row[6],
+                'thumbnailUrl': row[7],
+                'duration': row[8],
+                'difficultyLevel': row[9],
+                'isFree': row[10],
+                'price': float(row[11]) if row[11] else 0,
+                'rating': float(row[12]) if row[12] else 0,
+                'tags': row[13].split(',') if row[13] else [],
+                'status': row[14],
+                'viewCount': row[15],
+                'createdAt': str(row[16]),
+                'updatedAt': str(row[17]),
+                'priority': 5 - (len(resources) % 5),
+                'recommendationReason': '基于您的面试分析，推荐学习此课程',
+                'recommendationScore': round(85 + (len(resources) * 3), 1)
+            })
+        
+        return jsonify({
+            'success': True,
+            'message': '推荐生成成功',
+            'data': resources
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/resources/recommendations/<recommendation_id>/viewed', methods=['PUT'])
+def mark_recommendation_viewed(recommendation_id):
+    """标记推荐资源已查看"""
+    return jsonify({
+        'success': True,
+        'message': '已标记为已查看'
+    })
+
+@app.route('/api/resources/recommendations/<recommendation_id>/completed', methods=['PUT'])
+def mark_recommendation_completed(recommendation_id):
+    """标记推荐资源已完成"""
+    return jsonify({
+        'success': True,
+        'message': '已标记为已完成'
+    })
+
+# ==================== 资源收藏相关API ====================
+
+@app.route('/api/resources/favorites/check', methods=['GET'])
+def check_favorite():
+    """检查用户是否已收藏某个资源"""
+    user_id = request.args.get('userId')
+    resource_id = request.args.get('resourceId')
+    
+    if not user_id or not resource_id:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            'SELECT id FROM user_favorites WHERE user_id = %s AND favorite_type = %s AND target_id = %s',
+            (user_id, 'resource', resource_id)
+        )
+        result = cur.fetchone()
+        
+        return jsonify({
+            'success': True,
+            'isFavorite': result is not None
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/resources/favorites/add', methods=['POST'])
+def add_favorite():
+    """添加收藏"""
+    data = request.get_json()
+    user_id = data.get('userId')
+    resource_id = data.get('resourceId')
+    
+    if not user_id or not resource_id:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # 检查是否已收藏
+        cur.execute(
+            'SELECT id FROM user_favorites WHERE user_id = %s AND favorite_type = %s AND target_id = %s',
+            (user_id, 'resource', resource_id)
+        )
+        if cur.fetchone():
+            return jsonify({'success': False, 'error': '已收藏'})
+        
+        # 添加收藏
+        cur.execute(
+            'INSERT INTO user_favorites (user_id, favorite_type, target_id) VALUES (%s, %s, %s)',
+            (user_id, 'resource', resource_id)
+        )
+        conn.commit()
+        
+        return jsonify({'success': True, 'message': '收藏成功'})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/resources/favorites/remove', methods=['POST'])
+def remove_favorite():
+    """取消收藏"""
+    data = request.get_json()
+    user_id = data.get('userId')
+    resource_id = data.get('resourceId')
+    
+    if not user_id or not resource_id:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute(
+            'DELETE FROM user_favorites WHERE user_id = %s AND favorite_type = %s AND target_id = %s',
+            (user_id, 'resource', resource_id)
+        )
+        conn.commit()
+        
+        return jsonify({'success': True, 'message': '取消收藏成功'})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/api/resources/favorites', methods=['GET'])
+def get_favorites():
+    """获取用户收藏的资源列表"""
+    user_id = request.args.get('userId', '1')
+    page = int(request.args.get('page', 1))
+    size = int(request.args.get('size', 12))
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # 获取收藏的资源ID列表
+        query = '''
+            SELECT lr.id, lr.title, lr.author, lr.category, lr.resource_type, lr.description,
+                   lr.url, lr.thumbnail_url, lr.duration, lr.difficulty_level, lr.is_free,
+                   lr.price, lr.rating, lr.tags, lr.status, lr.view_count, lr.created_at, lr.updated_at,
+                   uf.created_at as favorite_time
+            FROM user_favorites uf
+            JOIN learning_resources lr ON uf.target_id = lr.id
+            WHERE uf.user_id = %s AND uf.favorite_type = %s AND lr.status = %s
+            ORDER BY uf.created_at DESC
+            LIMIT %s OFFSET %s
+        '''
+        
+        count_query = '''
+            SELECT COUNT(*)
+            FROM user_favorites uf
+            JOIN learning_resources lr ON uf.target_id = lr.id
+            WHERE uf.user_id = %s AND uf.favorite_type = %s AND lr.status = %s
+        '''
+        
+        cur.execute(count_query, (user_id, 'resource', 'active'))
+        total_count = cur.fetchone()[0]
+        
+        cur.execute(query, (user_id, 'resource', 'active', size, (page - 1) * size))
+        resources = []
+        for row in cur.fetchall():
+            resources.append({
+                'id': str(row[0]),
+                'title': row[1],
+                'author': row[2],
+                'category': row[3],
+                'resourceType': row[4],
+                'description': row[5],
+                'url': row[6],
+                'thumbnailUrl': row[7],
+                'duration': row[8],
+                'difficultyLevel': row[9],
+                'isFree': row[10],
+                'price': float(row[11]) if row[11] else 0,
+                'rating': float(row[12]) if row[12] else 0,
+                'tags': row[13].split(',') if row[13] else [],
+                'status': row[14],
+                'viewCount': row[15],
+                'createdAt': str(row[16]),
+                'updatedAt': str(row[17]),
+                'favoriteTime': str(row[18])
+            })
+        
+        total_pages = (total_count + size - 1) // size
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'resources': resources,
+                'totalCount': total_count,
+                'totalPages': total_pages,
+                'currentPage': page,
+                'pageSize': size
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    finally:
+        if conn:
+            conn.close()
+
 if __name__ == '__main__':
     app.run(port=8082, debug=False, threaded=False)
