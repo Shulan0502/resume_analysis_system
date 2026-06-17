@@ -1,38 +1,28 @@
-# Dependencies
-node_modules
-**/node_modules
-frontend/node_modules
-frontend2/node_modules
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# Build outputs
-target
-build
-dist
-**/target
-**/dist
-
-# Uploads (user data)
-uploads
-
-# Cache
-**/.npm-cache
-**/npm-cache
-**/__pycache__
-**/*.pyc
-**/.pytest_cache
-**/.cache
-
-# IDE
-.idea
-.vscode
-*.iml
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Documentation files (root level)
-/*.md
-!README.md
-learning_memory_service.py
-.trae
+### AL ###
+#Template for AL projects for Dynamics 365 Business Central
+#launch.json folder
+.vscode/
+#Cache folder
+.alcache/
+#Symbols folder
+.alpackages/
+#Snapshots folder
+.snapshots/
+#Testing Output folder
+.output/
+#Extension App-file
+*.app
+#Rapid Application Development File
+rad.json
+#Translation Base-file
+*.g.xlf
+#License-files
+*.bclicense
+*.flf
+#Test results file
+TestResults.xml
