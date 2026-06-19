@@ -79,3 +79,10 @@ docker-compose.yml
 ### Project docs ###
 # 本地设计/计划文档，不上传到远程
 docs/
+
+### Log files ###
+# 后端和前端运行日志
+backend/main_backend.log
+backend/backend_service.log
+backend/backend.log
+frontend/frontend.log
