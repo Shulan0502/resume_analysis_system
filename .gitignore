@@ -70,3 +70,8 @@ yarn-error.log*
 ### Database ###
 *.sql.bak
 backup*.sql
+database/
+
+### Docker ###
+docker-compose.yml
+.dockerignore
