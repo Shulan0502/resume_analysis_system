@@ -456,7 +456,10 @@ export const markRecommendationAsCompleted = async (recommendationId: number, ra
 // 添加收藏
 export const addFavorite = async (userId: number, resourceId: number) => {
   try {
-    const response = await api.post(`/resources/favorites?userId=${userId}&resourceId=${resourceId}`);
+    const response = await api.post(`/resources/favorites/add`, {
+      userId,
+      resourceId
+    });
     return response.data;
   } catch (error) {
     console.error('添加收藏失败:', error);
@@ -467,7 +470,10 @@ export const addFavorite = async (userId: number, resourceId: number) => {
 // 取消收藏
 export const removeFavorite = async (userId: number, resourceId: number) => {
   try {
-    const response = await api.delete(`/resources/favorites?userId=${userId}&resourceId=${resourceId}`);
+    const response = await api.post(`/resources/favorites/remove`, {
+      userId,
+      resourceId
+    });
     return response.data;
   } catch (error) {
     console.error('取消收藏失败:', error);

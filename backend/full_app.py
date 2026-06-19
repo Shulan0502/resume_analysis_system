@@ -788,10 +788,22 @@ def check_favorite():
 @app.route('/api/resources/favorites/add', methods=['POST'])
 def add_favorite():
     """添加收藏"""
-    data = request.get_json()
-    user_id = data.get('userId')
-    resource_id = data.get('resourceId')
-    
+    # 优先使用URL参数
+    user_id = request.args.get('userId')
+    resource_id = request.args.get('resourceId')
+
+    # 只有在URL参数缺失时才尝试解析JSON
+    if (not user_id or not resource_id) and request.content_type == 'application/json':
+        try:
+            data = request.get_json(silent=True) or {}
+            user_id = user_id or data.get('userId')
+            resource_id = resource_id or data.get('resourceId')
+        except:
+            pass
+
+    if not user_id or not resource_id:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+
     if not user_id or not resource_id:
         return jsonify({'success': False, 'error': '缺少必要参数'})
     
@@ -827,10 +839,22 @@ def add_favorite():
 @app.route('/api/resources/favorites/remove', methods=['POST'])
 def remove_favorite():
     """取消收藏"""
-    data = request.get_json()
-    user_id = data.get('userId')
-    resource_id = data.get('resourceId')
-    
+    # 优先使用URL参数
+    user_id = request.args.get('userId')
+    resource_id = request.args.get('resourceId')
+
+    # 只有在URL参数缺失时才尝试解析JSON
+    if (not user_id or not resource_id) and request.content_type == 'application/json':
+        try:
+            data = request.get_json(silent=True) or {}
+            user_id = user_id or data.get('userId')
+            resource_id = resource_id or data.get('resourceId')
+        except:
+            pass
+
+    if not user_id or not resource_id:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+
     if not user_id or not resource_id:
         return jsonify({'success': False, 'error': '缺少必要参数'})
     

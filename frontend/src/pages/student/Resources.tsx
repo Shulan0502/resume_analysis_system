@@ -10,7 +10,7 @@ import {
   Rate,
   Pagination,
   Spin,
-  message,
+  App,
   Tabs,
   Badge,
   Avatar,
@@ -75,6 +75,7 @@ interface ResourceStats {
 }
 
 const Resources: FC = () => {
+  const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
   const [resources, setResources] = useState<ResourceDetail[]>([])
   const [recommendations, setRecommendations] = useState<RecommendationDetail[]>([])
@@ -612,7 +613,7 @@ const Resources: FC = () => {
       const favoriteSet = new Set<number>()
       for (const resourceId of resourceIds) {
         const response = await checkFavorite(1, resourceId)
-        if (response.success && response.data === true) {
+        if (response.success && response.isFavorite === true) {
           favoriteSet.add(resourceId)
         }
       }

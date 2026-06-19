@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Layout, ConfigProvider } from 'antd'
+import { Layout, ConfigProvider, App as AntdApp } from 'antd'
 import MainLayout from './layouts/MainLayout'
 import CompanyLayout from './layouts/CompanyLayout'
 import SchoolLayout from './layouts/SchoolLayout'
@@ -51,8 +51,9 @@ const ProtectedRoute = ({ children, userType }: { children: React.ReactNode; use
 function App() {
   return (
     <ConfigProvider locale={zhCN}>
-      <Router>
-        <Routes>
+      <AntdApp>
+        <Router>
+          <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -315,7 +316,8 @@ function App() {
             }
           />
         </Routes>
-      </Router>
+        </Router>
+      </AntdApp>
     </ConfigProvider>
   )
 }
