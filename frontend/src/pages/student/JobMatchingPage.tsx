@@ -109,7 +109,7 @@ export default function JobMatchingPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 animate-fade-in-up">
       <Card title={<><AimOutlined /> 人岗匹配分析</>}>
         <Row gutter={16}>
           <Col span={8}>

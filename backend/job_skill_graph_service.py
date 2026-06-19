@@ -82,6 +82,11 @@ class LLMClient:
         self.api_key = DASHSCOPE_API_KEY
         self.base_url = DASHSCOPE_BASE_URL
 
+    async def generate(self, prompt: str, temperature: float = 0.1) -> str:
+        """单轮对话生成"""
+        messages = [{"role": "user", "content": prompt}]
+        return await self.achat_complete(messages, temperature)
+
     async def achat_complete(self, messages: list, temperature: float = 0.1) -> str:
         import httpx
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -798,6 +803,291 @@ async def match_resume(request: ResumeMatchRequest):
 
 
 # ============================================================================
+# 趋势分析 - 数据提取 + AI解读
+# ============================================================================
+
+class TrendAnalysisRequest(BaseModel):
+    include_ai_insight: bool = True  # 是否包含 AI 解读
+
+
+@app.get("/api/job-skill-graph/trend-data")
+async def get_trend_data():
+    """
+    快速接口：只返回统计数据（不含 AI 解读，毫秒级响应）
+    """
+    try:
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            popular_skills = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s:Skill)
+                WITH s.name as skill, count(j) as job_count
+                RETURN skill, job_count
+                ORDER BY job_count DESC
+                LIMIT 15
+            """).data()
+
+            skill_relations = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s1:Skill)
+                MATCH (j)-[:REQUIRES]->(s2:Skill)
+                WHERE s1.name < s2.name
+                WITH s1.name as skill1, s2.name as skill2, count(j) as co_occurrence
+                WHERE co_occurrence >= 2
+                RETURN skill1, skill2, co_occurrence
+                ORDER BY co_occurrence DESC
+                LIMIT 20
+            """).data()
+
+            emerging_jobs = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s:Skill)
+                WITH j, collect(s.name) as skills
+                WHERE size(skills) >= 2
+                WITH j.name as job_name, skills,
+                     size([(j2)-[:REQUIRES]->(s2:Skill)
+                           WHERE j2.name <> j.name AND s2.name IN skills | j2]) as common_jobs
+                WHERE common_jobs <= 5
+                RETURN job_name, skills, common_jobs
+                ORDER BY common_jobs ASC
+                LIMIT 10
+            """).data()
+
+        driver.close()
+
+        return {
+            "success": True,
+            "data": {
+                "popular_skills": popular_skills,
+                "skill_relations": skill_relations,
+                "emerging_jobs": emerging_jobs,
+                "summary": {
+                    "total_skills": len(popular_skills),
+                    "total_relations": len(skill_relations),
+                    "emerging_count": len(emerging_jobs)
+                }
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"趋势数据加载失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/job-skill-graph/trend-insight")
+async def get_trend_insight():
+    """
+    慢速接口：单独调用大模型生成 AI 解读（数十秒）
+    """
+    if not DASHSCOPE_API_KEY:
+        return {"success": False, "message": "未配置 DASHSCOPE_API_KEY"}
+
+    try:
+        # 重新拉取数据作为上下文
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            popular_skills = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s:Skill)
+                WITH s.name as skill, count(j) as job_count
+                RETURN skill, job_count
+                ORDER BY job_count DESC
+                LIMIT 15
+            """).data()
+            skill_relations = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s1:Skill)
+                MATCH (j)-[:REQUIRES]->(s2:Skill)
+                WHERE s1.name < s2.name
+                WITH s1.name as skill1, s2.name as skill2, count(j) as co_occurrence
+                WHERE co_occurrence >= 2
+                RETURN skill1, skill2, co_occurrence
+                ORDER BY co_occurrence DESC
+                LIMIT 20
+            """).data()
+            emerging_jobs = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s:Skill)
+                WITH j, collect(s.name) as skills
+                WHERE size(skills) >= 2
+                WITH j.name as job_name, skills,
+                     size([(j2)-[:REQUIRES]->(s2:Skill)
+                           WHERE j2.name <> j.name AND s2.name IN skills | j2]) as common_jobs
+                WHERE common_jobs <= 5
+                RETURN job_name, skills, common_jobs
+                ORDER BY common_jobs ASC
+                LIMIT 10
+            """).data()
+        driver.close()
+
+        analysis_data = {
+            "popular_skills": popular_skills,
+            "skill_relations": skill_relations,
+            "emerging_jobs": emerging_jobs,
+            "summary": {
+                "total_skills": len(popular_skills),
+                "total_relations": len(skill_relations),
+                "emerging_count": len(emerging_jobs)
+            }
+        }
+
+        ai_insight = await generate_trend_insight(analysis_data)
+
+        return {
+            "success": True,
+            "data": {"ai_insight": ai_insight}
+        }
+
+    except Exception as e:
+        logger.error(f"AI 解读生成失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/job-skill-graph/trend-analysis")
+async def analyze_trends(request: TrendAnalysisRequest = TrendAnalysisRequest(include_ai_insight=True)):
+    """
+    趋势分析：一次性返回数据 + AI 解读（兼容旧接口）
+    """
+    """
+    趋势分析：提取技能需求数据 + AI 解读
+    """
+    try:
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            # 1. 热门技能排行 TOP15
+            popular_skills = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s:Skill)
+                WITH s.name as skill, count(j) as job_count
+                RETURN skill, job_count
+                ORDER BY job_count DESC
+                LIMIT 15
+            """).data()
+
+            # 2. 技能关联分析（共现关系）
+            skill_relations = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s1:Skill)
+                MATCH (j)-[:REQUIRES]->(s2:Skill)
+                WHERE s1.name < s2.name
+                WITH s1.name as skill1, s2.name as skill2, count(j) as co_occurrence
+                WHERE co_occurrence >= 2
+                RETURN skill1, skill2, co_occurrence
+                ORDER BY co_occurrence DESC
+                LIMIT 20
+            """).data()
+
+            # 3. 新兴岗位发现（技能组合新颖度）
+            emerging_jobs = session.run("""
+                MATCH (j:Job)-[:REQUIRES]->(s:Skill)
+                WITH j, collect(s.name) as skills
+                WHERE size(skills) >= 2
+                WITH j.name as job_name, skills,
+                     // 计算技能组合的罕见度
+                     size([(j2)-[:REQUIRES]->(s2:Skill)
+                           WHERE j2.name <> j.name AND s2.name IN skills | j2]) as common_jobs
+                WHERE common_jobs <= 5  // 技能组合较少见
+                RETURN job_name, skills, common_jobs
+                ORDER BY common_jobs ASC
+                LIMIT 10
+            """).data()
+
+        driver.close()
+
+        # 4. 构造分析数据
+        analysis_data = {
+            "popular_skills": popular_skills,
+            "skill_relations": skill_relations,
+            "emerging_jobs": emerging_jobs,
+            "summary": {
+                "total_skills": len(popular_skills),
+                "total_relations": len(skill_relations),
+                "emerging_count": len(emerging_jobs)
+            }
+        }
+
+        # 5. 如果需要 AI 解读，调用大模型
+        ai_insight = None
+        if request.include_ai_insight:
+            if not DASHSCOPE_API_KEY:
+                ai_insight = "【AI解读功能需要配置 DASHSCOPE_API_KEY】"
+            else:
+                ai_insight = await generate_trend_insight(analysis_data)
+
+        return {
+            "success": True,
+            "data": {
+                "raw_data": analysis_data,
+                "ai_insight": ai_insight
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"趋势分析失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def generate_trend_insight(data: dict) -> str:
+    """
+    调用大模型生成趋势解读
+    """
+    try:
+        # 提取关键信息
+        top_skills = data["popular_skills"][:10]  # 增加到 TOP10
+        top_relations = data["skill_relations"][:10]  # 增加到 TOP10
+        emerging = data["emerging_jobs"][:5]  # 增加到 5 个示例
+
+        # 构造提示词
+        prompt = f"""你是就业市场分析专家。基于以下技能需求数据，给出详细专业趋势解读：
+
+## 数据概览
+
+### 热门技能 TOP10
+{format_skills_list(top_skills)}
+
+### 技能关联关系 TOP10
+{format_relations_list(top_relations)}
+
+### 新兴岗位示例
+{format_emerging_list(emerging)}
+
+## 分析要求
+
+请深入分析当前就业市场趋势，详细回答以下问题：
+
+1. 技能趋势判断：哪些技能需求最旺盛？反映了什么技术趋势和市场变化？
+2. 关联规律洞察：技能之间有什么组合规律？哪些技能组合最具竞争力？
+3. 薪资与技能关系：分析高需求技能对应的薪资水平和职业发展前景
+4. 新兴岗位解读：新兴岗位需要什么技能组合？代表了什么行业趋势？
+5. 求职建议：对不同背景的求职者（应届生、转行者、资深人士）分别给出技能提升建议
+
+## 输出要求
+
+- 用通俗语言解释，避免过于技术化
+- 给出具体数据支撑你的观点
+- 提供可操作的求职建议，针对不同求职背景给出差异化建议
+- 控制在 600-800 字之间，分段清晰，内容详实
+- 重要：输出纯文本，绝对不要使用任何 markdown 符号（包括 **、#、##、✅、📊、🔍 等）
+- 标题直接用数字编号即可，如"1."、"2."、"3."
+- 用空行分隔段落
+
+请开始详细分析："""
+
+        # 调用讯飞星火 API
+        llm_client = LLMClient()
+        response = await llm_client.generate(prompt)
+        return response
+
+    except Exception as e:
+        logger.error(f"AI 解读生成失败: {e}")
+        return f"【AI 解读生成失败：{str(e)}】"
+
+
+def format_skills_list(skills):
+    return "\n".join([f"{i+1}. {s['skill']} - {s['job_count']} 个岗位需求" for i, s in enumerate(skills)])
+
+
+def format_relations_list(relations):
+    return "\n".join([f"{i+1}. {r['skill1']} + {r['skill2']} - 共现 {r['co_occurrence']} 个岗位" for i, r in enumerate(relations)])
+
+
+def format_emerging_list(jobs):
+    return "\n".join([f"{i+1}. {j['job_name']} - 技能: {', '.join(j['skills'])} (罕见度: {j['common_jobs']})" for i, j in enumerate(jobs)])
+
+
+# ============================================================================
 # 启动
 # ============================================================================
 
@@ -806,4 +1096,11 @@ if __name__ == "__main__":
     if not DASHSCOPE_API_KEY:
         logger.warning("⚠️  DASHSCOPE_API_KEY 未设置")
     logger.info("🚀 启动岗位能力知识图谱服务...")
-    uvicorn.run("job_skill_graph_service:app", host="0.0.0.0", port=7576, reload=True)
+    uvicorn.run(
+        "job_skill_graph_service:app",
+        host="0.0.0.0",
+        port=7576,
+        reload=True,
+        log_level="warning",  # 只显示 warning 及以上级别日志
+        access_log=False  # 禁用访问日志
+    )

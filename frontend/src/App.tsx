@@ -17,6 +17,7 @@ import Resources from './pages/student/Resources.tsx' // 学习资源页面
 import Jobs from './pages/student/Jobs.tsx' // 招聘岗位页面
 import KnowledgeGraphPage from './pages/student/KnowledgeGraphPage.tsx' // 岗位能力知识图谱页面
 import JobMatchingPage from './pages/student/JobMatchingPage.tsx' // 人岗匹配页面
+import TrendAnalysisPage from './pages/student/TrendAnalysisPage.tsx' // 趋势分析页面
 import Login from './pages/auth/Login.tsx'
 import CompanyProfile from './pages/company/CompanyProfile.tsx'
 import CompanyJobs from './pages/company/CompanyJobs.tsx'
@@ -336,6 +337,18 @@ function App() {
                 <MainLayout>
                   <Content className="p-6">
                     <JobMatchingPage />
+                  </Content>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trend-analysis"
+            element={
+              <ProtectedRoute userType="student">
+                <MainLayout>
+                  <Content className="p-6">
+                    <TrendAnalysisPage />
                   </Content>
                 </MainLayout>
               </ProtectedRoute>

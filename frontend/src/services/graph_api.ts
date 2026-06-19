@@ -144,3 +144,48 @@ export async function recommendJobs(
   });
   return response.data.data || [];
 }
+
+export interface TrendAnalysisData {
+  popular_skills: Array<{ skill: string; job_count: number }>;
+  skill_relations: Array<{ skill1: string; skill2: string; co_occurrence: number }>;
+  emerging_jobs: Array<{ job_name: string; skills: string[]; common_jobs: number }>;
+  summary: {
+    total_skills: number;
+    total_relations: number;
+    emerging_count: number;
+  };
+}
+
+export interface TrendAnalysisResponse {
+  raw_data: TrendAnalysisData;
+  ai_insight: string | null;
+}
+
+export interface TrendAnalysisResponse {
+  raw_data: TrendAnalysisData;
+  ai_insight: string | null;
+}
+
+export async function getTrendData(): Promise<TrendAnalysisData> {
+  const response = await graphApi.get('/trend-data');
+  if (!response.data.success) {
+    throw new Error(response.data.message || '数据加载失败');
+  }
+  return response.data.data;
+}
+
+export async function getTrendInsight(): Promise<string> {
+  const response = await graphApi.post('/trend-insight');
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'AI 解读生成失败');
+  }
+  return response.data.data.ai_insight;
+}
+
+export async function getTrendAnalysis(includeAI = true): Promise<TrendAnalysisResponse> {
+  const response = await graphApi.post('/trend-analysis', { include_ai_insight: includeAI });
+  if (!response.data.success) {
+    throw new Error(response.data.message || '趋势分析失败');
+  }
+  return response.data.data;
+}

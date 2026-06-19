@@ -221,9 +221,9 @@ export default function KnowledgeGraphPage() {
   const preferredCount = jobAnalysis?.skills.filter((s) => s.importance === 'preferred').length ?? 0;
 
   return (
-    <div className="flex gap-4" style={{ height: 'calc(100vh - 120px)' }}>
+    <div className="flex gap-4 animate-fade-in" style={{ height: 'calc(100vh - 120px)' }}>
       {/* ========== 左侧：Job 列表 ========== */}
-      <div className="w-64 flex-shrink-0 flex flex-col bg-white rounded-lg shadow-sm p-3">
+      <div className="w-64 flex-shrink-0 flex flex-col bg-white rounded-lg shadow-sm p-3 animate-slide-in-left">
         <div className="mb-3">
           <h3 className="text-base font-semibold mb-2">岗位列表</h3>
           <Input
@@ -259,7 +259,7 @@ export default function KnowledgeGraphPage() {
       </div>
 
       {/* ========== 中央：图谱画布 ========== */}
-      <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm">
+      <div className="flex-1 flex flex-col bg-white rounded-lg shadow-sm animate-fade-in-up delay-100">
         {/* 顶部统计条 */}
         <div className="flex items-center gap-6 px-4 py-3 border-b">
           <Statistic
@@ -300,7 +300,7 @@ export default function KnowledgeGraphPage() {
       </div>
 
       {/* ========== 右侧：详情 ========== */}
-      <div className="w-80 flex-shrink-0 bg-white rounded-lg shadow-sm p-4 overflow-y-auto">
+      <div className="w-80 flex-shrink-0 bg-white rounded-lg shadow-sm p-4 overflow-y-auto animate-slide-in-right">
         {!skillDetail && jobAnalysis && (
           <>
             <h3 className="text-base font-semibold mb-1">{jobAnalysis.job}</h3>

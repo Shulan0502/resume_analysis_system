@@ -1,0 +1,36 @@
+ * Serving Flask app 'full_app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8082
+Press CTRL+C to quit
+127.0.0.1 - - [19/Jun/2026 20:52:21] "GET /api/jobs/active?page=1&size=2 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:53:44] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:53:44] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:53:44] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:53:44] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:53:44] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:53:44] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:57:53] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:57:53] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:57:53] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:57:53] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:57:53] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 20:57:53] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:05:29] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:05:29] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:05:29] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:05:29] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:05:29] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:05:29] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:08:10] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:08:10] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:08:11] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:08:11] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:08:11] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:08:11] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:16:43] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:16:43] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:16:43] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:16:43] "GET /api/jobs/active?page=1&size=12 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:16:43] "GET /api/jobs/popular?limit=6 HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jun/2026 21:16:43] "GET /api/jobs/latest?limit=6 HTTP/1.1" 200 -

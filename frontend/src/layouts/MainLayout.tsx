@@ -11,6 +11,7 @@ import {
   BookOutlined,
   ApartmentOutlined,
   AimOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
@@ -65,6 +66,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       key: '/job-matching',
       icon: <AimOutlined />,
       label: '人岗匹配',
+    },
+    {
+      key: '/trend-analysis',
+      icon: <LineChartOutlined />,
+      label: '趋势分析',
     },
     {
       key: '/resume-analysis',
