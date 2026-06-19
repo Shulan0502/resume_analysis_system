@@ -1,3 +1,28 @@
-Flask==2.3.0
-psycopg2-binary==2.9.6
-python-dotenv==1.0.0
+# ============================================================================
+# Smart Employment Big Data Platform - Backend Dependencies
+# ============================================================================
+# 安装: pip install -r requirements.txt
+# 建议在 venv 中安装: python -m venv venv && source venv/bin/activate
+# ============================================================================
+
+# ----- Web 框架 -----
+Flask==2.3.0                       # 旧版 app.py / simple_app.py / full_app.py 用
+fastapi==0.111.0                   # job_skill_graph_service.py 知识图谱服务
+uvicorn[standard]==0.30.1          # ASGI 服务器（启动 7576 端口）
+
+# ----- 数据库驱动 -----
+psycopg2-binary==2.9.9             # PostgreSQL 客户端（job_graph 库）
+neo4j==5.20.0                      # Neo4j 图数据库驱动（bolt 协议）
+
+# ----- LLM / HTTP 客户端 -----
+httpx==0.27.0                      # job_skill_graph_service.py 调阿里云百炼 API
+requests==2.32.3                   # scripts/data_import/build_job_skill_graph.py 用
+
+# ----- 数据校验 -----
+pydantic==2.7.1                    # FastAPI 请求/响应模型
+
+# ----- 环境变量 -----
+python-dotenv==1.0.0               # 加载 .env 文件
+
+# ----- CORS 依赖（隐式） -----
+# starlette 由 fastapi 自动依赖，无需单独列出
