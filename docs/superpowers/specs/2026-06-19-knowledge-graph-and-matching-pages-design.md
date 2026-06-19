@@ -16,7 +16,7 @@ status: 待审阅
 |------|------|
 | 后端图谱构建（Job-Skill REQUIRES） | ✅ 已实现 `job_skill_graph_service.py` |
 | 后端图谱查询 API | ✅ 已有 stats / search / skill-analysis / job-analysis / graph-data |
-| 后端人岗匹配 / 差距分析 API | ❌ **完全缺失** |
+| 后端人岗匹配 / 差距分析 API | ❌ **完全缺失**（本次新增 match-resume + recommend-jobs） |
 | 前端图谱可视化库 | ❌ 项目未安装 G6 / D3 / cytoscape |
 | 前端能力图谱页面 | ❌ 不存在 |
 | 前端人岗匹配页面 | ❌ 不存在 |
@@ -25,9 +25,9 @@ status: 待审阅
 ### 1.2 交付物
 
 1. 前端 `KnowledgeGraphPage.tsx`（路由 `/knowledge-graph`）
-2. 前端 `JobMatchingPage.tsx`（路由 `/job-matching`）
+2. 前端 `JobMatchingPage.tsx`（路由 `/job-matching`，仅文本简历输入）
 3. 前端 `services/graph_api.ts`（图谱与匹配 API 封装）
-4. 后端 `job_skill_graph_service.py` 新增 3 个接口
+4. 后端 `job_skill_graph_service.py` 新增 2 个接口（`match-resume` + `recommend-jobs`）
 5. 菜单 + 路由注册
 6. Vite proxy 增加 7576 端口代理
 7. 安装 `@antv/g6` 依赖
@@ -93,7 +93,7 @@ status: 待审阅
 |------|------|------|
 | 图谱可视化 | `@antv/g6@^5` | 后端已按 G6 nodes/edges 格式返回；交互最专业 |
 | 简历解析 | LLM (dashscope，复用现有 LLMClient) | 项目已有，无需新依赖 |
-| 文件解析 | `pdfplumber` (PDF) + `python-docx` (Word) | Python 生态最稳；轻量 |
+| 文件解析 | ~~（取消）~~ | MVP 不做文件上传，简化范围 |
 | 评分算法 | 技能 50% + 经验 25% + 学历 25% | 方案文档 3.4 节定稿 |
 | 推荐岗位算法 | Jaccard 相似度 (Cypher 实现) | 在 Neo4j 一句 Cypher 算完 |
 | Vite proxy | 新增 `/api/job-skill-graph` 路径代理到 7576 | 避免改 baseURL，零侵入 |
@@ -106,19 +106,18 @@ status: 待审阅
 
 ### 3.1 `POST /api/job-skill-graph/match-resume`
 
+> **MVP 范围**：只接受纯文本简历输入，不做 PDF/Word 文件解析。
+
 **请求体**：
 ```json
 {
   "target_job": "Python开发",
-  "resume_text": "可选, 与 resume_file 二选一",
-  "resume_file_base64": "可选, PDF/Word 的 base64",
-  "resume_filename": "可选, 用于判断文件类型"
+  "resume_text": "用户的简历文本内容"
 }
 ```
 
 **处理流程**：
-1. 提取简历文本（如果是文件，先 base64 解码后用 pdfplumber/python-docx 抽文本）
-2. 调 LLM，prompt 返回 JSON：
+1. 调 LLM，prompt 返回 JSON：
    ```json
    {
      "skills": ["Python", "Django", "MySQL", "Docker"],
@@ -126,13 +125,13 @@ status: 待审阅
      "education_level": "本科"
    }
    ```
-3. 在 Neo4j 模糊查找 `target_job`（`MATCH (j:Job) WHERE j.name CONTAINS $name`）拿到标准岗位名
-4. 查该岗位的 REQUIRES 技能，分 `required` 和 `preferred`
-5. 算分：
+2. 在 Neo4j 模糊查找 `target_job`（`MATCH (j:Job) WHERE j.name CONTAINS $name`）拿到标准岗位名
+3. 查该岗位的 REQUIRES 技能，分 `required` 和 `preferred`
+4. 算分：
    - 技能匹配分：`len(matched_required) / len(required) * 0.4 + len(matched_preferred) / len(preferred) * 0.1`
    - 经验匹配分：`min(resume_exp / required_exp, 1) * 0.25`
    - 学历匹配分：按 `{高中:1, 大专:2, 本科:3, 硕士:4, 博士:5}` 映射 `min(a/b, 1) * 0.25`
-6. 列出缺失技能（required 中未匹配的）
+5. 列出缺失技能（required 中未匹配的）
 
 **返回**：
 ```json
@@ -195,27 +194,13 @@ LIMIT $limit
 }
 ```
 
-### 3.3 `POST /api/job-skill-graph/parse-resume-file`
+### 3.3 ~~`POST /api/job-skill-graph/parse-resume-file`~~
 
-**请求体**：
-```json
-{ "file_base64": "...", "filename": "resume.pdf" }
-```
-
-**返回**：
-```json
-{ "success": true, "text": "抽出的纯文本..." }
-```
-
-> 注：此接口是辅助接口，前端可调用也可直接在前端用 mammoth/pdfjs 解析。**MVP 阶段只用后端解析**，减少前端依赖。
+> **已取消**：MVP 阶段不做文件上传，此接口不需要。
 
 ### 3.4 后端依赖新增
 
-`requirements.txt`（或 backend pyproject）需加：
-```
-pdfplumber>=0.10.0
-python-docx>=1.1.0
-```
+无需新增依赖（pdfplumber / python-docx 不再需要）。
 
 ---
 
@@ -246,12 +231,10 @@ getJobAnalysis(jobName: string): Promise<...>
 // 新增 (本次后端补)
 matchResume(payload: {
   target_job: string;
-  resume_text?: string;
-  resume_file_base64?: string;
-  resume_filename?: string;
+  resume_text: string;        // 仅文本，不支持文件
 }): Promise<MatchResult>
 recommendJobs(skills: string[], limit?: number): Promise<RecommendJob[]>
-parseResumeFile(file_base64: string, filename: string): Promise<{ text: string }>
+// parseResumeFile 已取消
 ```
 
 > 注意：所有请求路径用 `/job-skill-graph/*` 前缀（Vite proxy 会把 `/api` → 后端对应服务）。由于图谱服务跑在 7576 端口，与主 8082 不同，proxy 需新增一条 `/api/job-skill-graph` 路径前缀的转发规则。
@@ -268,11 +251,9 @@ parseResumeFile(file_base64: string, filename: string): Promise<{ text: string }
 ### 4.4 `JobMatchingPage.tsx` UI
 
 **上半 输入区 Card**：
-- Row: 
+- Row:
   - 左：`<Select>` 目标岗位（`showSearch`，从 `searchGraph('')` 加载所有 Job 类型节点）
-  - 右：Tabs `[粘贴文本, 上传文件]`
-    - 粘贴：`<Input.TextArea rows={6} placeholder="请粘贴简历内容">`
-    - 上传：`<Upload accept=".pdf,.doc,.docx" beforeUpload>` 转 base64
+  - 右：`<Input.TextArea rows={8} placeholder="请粘贴简历内容（技能、经验、学历等）">`（不再做文件上传）
 - Button `开始分析` (loading 状态)
 
 **下半 结果区**（分析后渲染）：
@@ -333,11 +314,11 @@ proxy: {
 3. 后端 Cypher：`MATCH (j)-[:REQUIRES]->(s:Skill {name: "Python"}) RETURN j.name`
 4. 渲染岗位列表 + 共现技能
 
-### 场景 2：用户上传 PDF 简历分析 "Python开发" 岗位
+### 场景 2：用户粘贴简历文本分析 "Python开发" 岗位
 
-1. `<Upload beforeUpload>` → FileReader 读 base64
-2. 点 "开始分析" → `matchResume({target_job, resume_file_base64, resume_filename})`
-3. 后端：`pdfplumber` 抽文本 → LLM 抽技能 → Cypher 查岗位技能 → 算分
+1. 用户在 TextArea 输入简历 → 点 "开始分析"
+2. 前端 → `matchResume({target_job, resume_text})`
+3. 后端：LLM 抽技能 → Cypher 查岗位技能 → 算分
 4. 返回结构化结果 → 前端渲染 4 个 Progress 圆环 + Tag 列表
 5. 拿到 `resume_skills` 后并发请求 `recommendJobs(skills, 10)`
 6. 渲染推荐岗位 Table
@@ -399,8 +380,8 @@ proxy: {
 
 | 文件 | 变更 |
 |------|------|
-| `backend/job_skill_graph_service.py` | +3 接口, +~200 行 |
-| `backend/requirements.txt` | +pdfplumber, python-docx |
+| `backend/job_skill_graph_service.py` | +2 接口（match-resume + recommend-jobs）, +~150 行 |
+| `backend/requirements.txt` | 无变化（不做文件解析） |
 | `frontend/package.json` | +@antv/g6 |
 | `frontend/vite.config.ts` | +proxy 规则 |
 | `frontend/src/App.tsx` | +2 路由 |
@@ -420,3 +401,14 @@ proxy: {
 | Neo4j 未启动 → 图谱空 | 启动文档加 `docker-compose up neo4j` 步骤 |
 | 后端 7576 端口冲突 | `.env` 用 `JOB_GRAPH_PORT` 环境变量 |
 | 大量节点 G6 卡顿 | 默认 `min_skill_count=5`，超 200 节点自动隐藏次要 |
+
+---
+
+## 十一、后续可扩展（本次不做）
+
+下列能力 MVP 不做，等后续迭代：
+
+- PDF / Word 简历文件上传与解析（需 `pdfplumber` + `python-docx`）
+- 简历历史记录持久化（每次分析独立）
+- 缺失技能"去学习"实际跳转学习资源模块
+- 简历 OCR 支持扫描版 PDF
