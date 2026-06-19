@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { Layout, ConfigProvider } from 'antd'
+import { Layout, ConfigProvider, App as AntdApp } from 'antd'
 import MainLayout from './layouts/MainLayout'
 import CompanyLayout from './layouts/CompanyLayout'
 import SchoolLayout from './layouts/SchoolLayout'
@@ -15,6 +15,9 @@ import MockInterviewQA from './pages/student/MockInterviewQA.tsx'; // 模拟问�
 import MockInterviewRecord from './pages/student/MockInterviewRecord.tsx'; // 模拟面试录制页面
 import Resources from './pages/student/Resources.tsx' // 学习资源页面
 import Jobs from './pages/student/Jobs.tsx' // 招聘岗位页面
+import KnowledgeGraphPage from './pages/student/KnowledgeGraphPage.tsx' // 岗位能力知识图谱页面
+import JobMatchingPage from './pages/student/JobMatchingPage.tsx' // 人岗匹配页面
+import TrendAnalysisPage from './pages/student/TrendAnalysisPage.tsx' // 趋势分析页面
 import Login from './pages/auth/Login.tsx'
 import CompanyProfile from './pages/company/CompanyProfile.tsx'
 import CompanyJobs from './pages/company/CompanyJobs.tsx'
@@ -51,8 +54,9 @@ const ProtectedRoute = ({ children, userType }: { children: React.ReactNode; use
 function App() {
   return (
     <ConfigProvider locale={zhCN}>
-      <Router>
-        <Routes>
+      <AntdApp>
+        <Router>
+          <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -314,8 +318,45 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/knowledge-graph"
+            element={
+              <ProtectedRoute userType="student">
+                <MainLayout>
+                  <Content className="p-6">
+                    <KnowledgeGraphPage />
+                  </Content>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-matching"
+            element={
+              <ProtectedRoute userType="student">
+                <MainLayout>
+                  <Content className="p-6">
+                    <JobMatchingPage />
+                  </Content>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trend-analysis"
+            element={
+              <ProtectedRoute userType="student">
+                <MainLayout>
+                  <Content className="p-6">
+                    <TrendAnalysisPage />
+                  </Content>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-      </Router>
+        </Router>
+      </AntdApp>
     </ConfigProvider>
   )
 }

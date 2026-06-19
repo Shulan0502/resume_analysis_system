@@ -788,10 +788,22 @@ def check_favorite():
 @app.route('/api/resources/favorites/add', methods=['POST'])
 def add_favorite():
     """添加收藏"""
-    data = request.get_json()
-    user_id = data.get('userId')
-    resource_id = data.get('resourceId')
-    
+    # 优先使用URL参数
+    user_id = request.args.get('userId')
+    resource_id = request.args.get('resourceId')
+
+    # 只有在URL参数缺失时才尝试解析JSON
+    if (not user_id or not resource_id) and request.content_type == 'application/json':
+        try:
+            data = request.get_json(silent=True) or {}
+            user_id = user_id or data.get('userId')
+            resource_id = resource_id or data.get('resourceId')
+        except:
+            pass
+
+    if not user_id or not resource_id:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+
     if not user_id or not resource_id:
         return jsonify({'success': False, 'error': '缺少必要参数'})
     
@@ -827,10 +839,22 @@ def add_favorite():
 @app.route('/api/resources/favorites/remove', methods=['POST'])
 def remove_favorite():
     """取消收藏"""
-    data = request.get_json()
-    user_id = data.get('userId')
-    resource_id = data.get('resourceId')
-    
+    # 优先使用URL参数
+    user_id = request.args.get('userId')
+    resource_id = request.args.get('resourceId')
+
+    # 只有在URL参数缺失时才尝试解析JSON
+    if (not user_id or not resource_id) and request.content_type == 'application/json':
+        try:
+            data = request.get_json(silent=True) or {}
+            user_id = user_id or data.get('userId')
+            resource_id = resource_id or data.get('resourceId')
+        except:
+            pass
+
+    if not user_id or not resource_id:
+        return jsonify({'success': False, 'error': '缺少必要参数'})
+
     if not user_id or not resource_id:
         return jsonify({'success': False, 'error': '缺少必要参数'})
     
@@ -931,6 +955,123 @@ def get_favorites():
     finally:
         if conn:
             conn.close()
+
+# ==================== 岗位能力知识图谱API ====================
+GRAPH_SERVICE_URL = "http://localhost:7576"
+
+@app.route('/api/job-skill-graph/stats', methods=['GET'])
+def get_graph_stats():
+    """获取图谱统计信息"""
+    try:
+        import requests
+        response = requests.get(f"{GRAPH_SERVICE_URL}/api/job-skill-graph/stats", timeout=10)
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/job-skill-graph/skill-analysis/<skill_name>', methods=['GET'])
+def analyze_skill(skill_name):
+    """分析特定技能的需求情况"""
+    try:
+        import requests
+        response = requests.get(f"{GRAPH_SERVICE_URL}/api/job-skill-graph/skill-analysis/{skill_name}", timeout=10)
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/job-skill-graph/search', methods=['GET'])
+def search_graph():
+    """搜索知识图谱"""
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({'success': False, 'error': '请提供搜索关键词'})
+
+    try:
+        import requests
+        response = requests.get(f"{GRAPH_SERVICE_URL}/api/job-skill-graph/search?q={query}", timeout=10)
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/job-skill-graph/popular-skills', methods=['GET'])
+def get_popular_skills():
+    """获取热门技能排行"""
+    try:
+        import requests
+        stats_response = requests.get(f"{GRAPH_SERVICE_URL}/api/job-skill-graph/stats", timeout=10)
+        stats_data = stats_response.json()
+
+        if stats_data.get('success'):
+            popular_skills = stats_data['data']['popular_skills']
+            return jsonify({
+                'success': True,
+                'data': popular_skills
+            })
+        else:
+            return jsonify({'success': False, 'error': '获取统计失败'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/job-skill-graph/jobs/<skill_name>', methods=['GET'])
+def get_jobs_by_skill(skill_name):
+    """获取需要特定技能的岗位列表"""
+    try:
+        import requests
+        response = requests.get(f"{GRAPH_SERVICE_URL}/api/job-skill-graph/skill-analysis/{skill_name}", timeout=10)
+        data = response.json()
+
+        if data.get('success'):
+            return jsonify({
+                'success': True,
+                'skill': skill_name,
+                'jobs': data['data']['jobs'],
+                'companies': data['data']['companies']
+            })
+        else:
+            return jsonify({'success': False, 'error': '查询失败'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/job-skill-graph/graph-data', methods=['GET'])
+def get_graph_data():
+    """获取G6可视化图谱数据"""
+    try:
+        import requests
+        limit = request.args.get('limit', 30, type=int)
+        response = requests.get(
+            f"{GRAPH_SERVICE_URL}/api/job-skill-graph/graph-data?limit={limit}",
+            timeout=30
+        )
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/job-skill-graph/job-analysis/<job_name>', methods=['GET'])
+def analyze_job(job_name):
+    """分析特定岗位"""
+    try:
+        import requests
+        response = requests.get(
+            f"{GRAPH_SERVICE_URL}/api/job-skill-graph/job-analysis/{job_name}",
+            timeout=10
+        )
+        data = response.json()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 
 if __name__ == '__main__':
     app.run(port=8082, debug=False, threaded=False)

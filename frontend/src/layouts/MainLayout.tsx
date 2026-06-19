@@ -9,6 +9,9 @@ import {
   ShopOutlined,
   HistoryOutlined,
   BookOutlined,
+  ApartmentOutlined,
+  AimOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
@@ -55,6 +58,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       label: '求职市场',
     },
     {
+      key: '/knowledge-graph',
+      icon: <ApartmentOutlined />,
+      label: '能力图谱',
+    },
+    {
+      key: '/job-matching',
+      icon: <AimOutlined />,
+      label: '人岗匹配',
+    },
+    {
+      key: '/trend-analysis',
+      icon: <LineChartOutlined />,
+      label: '趋势分析',
+    },
+    {
       key: '/resume-analysis',
       icon: <UserOutlined />,
       label: '智能体简历分析',
@@ -91,17 +109,22 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         style={{
           background: '#fff',
           borderRight: '1px solid #f0f0f0',
-          paddingTop: 48,
           position: 'fixed',
           left: 0,
           top: 0,
           bottom: 0,
           height: '100vh',
           zIndex: 100,
+          overflow: 'hidden',
         }}
       >
+        {/* 顶部 Logo（固定顶部，paddingTop 48 在 Sider 内部实现） */}
         <div
           style={{
+            position: 'absolute',
+            top: 48,
+            left: 0,
+            right: 0,
             height: LOGO_HEIGHT,
             display: 'flex',
             alignItems: 'center',
@@ -111,9 +134,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             letterSpacing: 2,
             background: '#fff',
             borderBottom: '1px solid #f0f0f0',
-            transition: 'padding 0.2s',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
+            zIndex: 2,
           }}
         >
           <span
@@ -122,20 +145,47 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             智能体面试评测
           </span>
         </div>
-        <Menu
-          theme="light"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
+
+        {/* 菜单区：top = 48+56 = 104，bottom = 88（给退出按钮留位） */}
+        <div
           style={{
-            background: '#fff',
-            fontSize: 20,
-            paddingLeft: CONTENT_PADDING_LEFT,
+            position: 'absolute',
+            top: 48 + LOGO_HEIGHT,
+            left: 0,
+            right: 0,
+            bottom: 88,
+            overflowY: 'auto',
+            overflowX: 'hidden',
           }}
-          className="[&_.ant-menu-item]:mb-4 [&_.ant-menu-item]:!h-16 [&_.ant-menu-item]:flex [&_.ant-menu-item]:items-center [&_.ant-menu-item-icon]:text-xl"
-        />
-        <div className="absolute bottom-8 left-0 right-0">
+        >
+          <Menu
+            theme="light"
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={menuItems}
+            onClick={({ key }) => navigate(key)}
+            style={{
+              background: '#fff',
+              fontSize: 20,
+              paddingLeft: CONTENT_PADDING_LEFT,
+              borderInlineEnd: 'none',
+            }}
+            className="[&_.ant-menu-item]:mb-4 [&_.ant-menu-item]:!h-16 [&_.ant-menu-item]:flex [&_.ant-menu-item]:items-center [&_.ant-menu-item-icon]:text-xl"
+          />
+        </div>
+
+        {/* 退出按钮：固定左下角 */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            left: 0,
+            right: 0,
+            background: '#fff',
+            borderTop: '1px solid #f0f0f0',
+            padding: '8px 0',
+          }}
+        >
           <Button
             type="text"
             icon={<LogoutOutlined className="text-xl" />}
