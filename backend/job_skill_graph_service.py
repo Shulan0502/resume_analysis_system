@@ -432,7 +432,7 @@ async def analyze_job(job_name: str):
 
 @app.get("/api/job-skill-graph/search")
 async def search_graph(query: str = ""):
-    """搜索节点"""
+    """搜索节点（大小写不敏感）"""
     if not query:
         return {"success": False, "error": "请提供搜索关键词"}
     try:
@@ -440,7 +440,7 @@ async def search_graph(query: str = ""):
         with driver.session() as session:
             results = session.run("""
                 MATCH (n)
-                WHERE n.name CONTAINS $query
+                WHERE toLower(n.name) CONTAINS toLower($query)
                 RETURN n.name as name, labels(n)[0] as type
                 LIMIT 20
             """, {"query": query}).data()
@@ -520,6 +520,280 @@ async def get_graph_data(limit: int = 100, min_skill_count: int = 1):
         }
     except Exception as e:
         logger.error(f"获取图谱数据失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# 人岗匹配 - 推荐岗位（Jaccard 相似度）
+# ============================================================================
+
+@app.get("/api/job-skill-graph/recommend-jobs")
+async def recommend_jobs(skills: str, limit: int = 10):
+    """
+    根据候选技能列表，从 Neo4j 找出最相似的岗位
+    算法：Jaccard 相似度 = |A ∩ B| / |A ∪ B|
+    """
+    try:
+        if not skills:
+            raise HTTPException(status_code=400, detail="skills 参数不能为空")
+
+        candidate_skills = [s.strip() for s in skills.split(",") if s.strip()]
+        if not candidate_skills:
+            raise HTTPException(status_code=400, detail="skills 参数解析后为空")
+
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            results = session.run("""
+                MATCH (j:Job)-[r:REQUIRES]->(s:Skill)
+                WHERE s.name IN $candidate_skills
+                WITH j, collect(DISTINCT s.name) AS job_skills
+                WITH j, job_skills,
+                     [x IN job_skills WHERE x IN $candidate_skills] AS overlap_list
+                WITH j, job_skills, overlap_list,
+                     size(overlap_list) AS overlap,
+                     size(job_skills) + size($candidate_skills) - size(overlap_list) AS union_size
+                WHERE overlap > 0 AND union_size > 0
+                RETURN j.name AS job,
+                       toFloat(overlap) / union_size AS jaccard,
+                       overlap_list AS shared_skills,
+                       size(job_skills) AS total_skills
+                ORDER BY jaccard DESC, overlap DESC
+                LIMIT $limit
+            """, {"candidate_skills": candidate_skills, "limit": limit}).data()
+        driver.close()
+
+        return {
+            "success": True,
+            "data": [
+                {
+                    "job": r["job"],
+                    "match_ratio": round(r["jaccard"], 4),
+                    "matched_skill_count": len(r["shared_skills"]),
+                    "total_skill_count": r["total_skills"],
+                    "shared_skills": r["shared_skills"],
+                }
+                for r in results
+            ],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"推荐岗位失败: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# 人岗匹配 - 简历分析
+# ============================================================================
+
+class ResumeMatchRequest(BaseModel):
+    target_job: str
+    resume_text: str
+
+
+def _calculate_skill_score(
+    resume_skills: list[str],
+    required_skills: list[str],
+    preferred_skills: list[str],
+) -> tuple[float, list[dict], list[dict]]:
+    """
+    计算技能匹配分（required 40% + preferred 10%）
+    返回: (技能分, 已匹配技能列表, 缺失技能列表)
+    """
+    resume_set = set(resume_skills)
+
+    matched_required = [s for s in required_skills if s in resume_set]
+    matched_preferred = [s for s in preferred_skills if s in resume_set]
+    missing_required = [s for s in required_skills if s not in resume_set]
+
+    req_score = (
+        len(matched_required) / len(required_skills) * 0.4
+        if required_skills
+        else 0.4
+    )
+    pref_score = (
+        len(matched_preferred) / len(preferred_skills) * 0.1
+        if preferred_skills
+        else 0.1
+    )
+
+    matched = (
+        [{"name": s, "importance": "required"} for s in matched_required]
+        + [{"name": s, "importance": "preferred"} for s in matched_preferred]
+    )
+    missing = [{"name": s, "importance": "required"} for s in missing_required]
+
+    return round((req_score + pref_score) * 100, 2), matched, missing
+
+
+EDU_MAP = {"高中": 1, "大专": 2, "本科": 3, "硕士": 4, "博士": 5}
+
+
+def _calculate_experience_score(
+    resume_years: float, required_years: float
+) -> float:
+    """经验匹配分（25%）"""
+    if required_years <= 0:
+        return 25.0
+    return round(min(resume_years / required_years, 1) * 25, 2)
+
+
+def _calculate_education_score(
+    resume_edu: str, required_edu: str
+) -> float:
+    """学历匹配分（25%）"""
+    r = EDU_MAP.get(resume_edu, 1)
+    q = EDU_MAP.get(required_edu, 1)
+    return round(min(r / q, 1) * 25, 2)
+
+
+@app.post("/api/job-skill-graph/match-resume")
+async def match_resume(request: ResumeMatchRequest):
+    """
+    人岗匹配：给定目标岗位 + 简历文本，输出匹配分和缺口
+    流程：
+      1. LLM 从简历抽技能/经验/学历
+      2. Neo4j 查目标岗位的 required/preferred 技能
+      3. 计算总分 = 技能 50% + 经验 25% + 学历 25%
+    """
+    try:
+        # 1. LLM 解析简历
+        llm_client = LLMClient()
+        prompt = f"""你是简历解析专家。请从以下简历中提取结构化信息，严格按 JSON 格式返回，不要任何其他文字：
+
+```json
+{{
+  "skills": ["技能1", "技能2", ...],
+  "experience_years": 3,
+  "education_level": "本科"
+}}
+```
+
+要求：
+- skills: 列出简历中提到的所有技术技能（如 Python、Java、Docker、MySQL 等），使用标准名称
+- experience_years: 工作年限（数字，实习算 0.5，不足 1 年按 1 算）
+- education_level: 最高学历，从 ["高中", "大专", "本科", "硕士", "博士"] 中选一个
+
+简历内容：
+{request.resume_text}
+"""
+        messages = [{"role": "user", "content": prompt}]
+        response_text = await llm_client.achat_complete(messages, temperature=0.1)
+
+        import json
+        # 兼容 LLM 把 JSON 包在 ```json ... ``` 里的情况
+        cleaned = response_text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("```", 2)[1]
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:]
+            cleaned = cleaned.strip().rstrip("`").strip()
+
+        parsed = json.loads(cleaned)
+        resume_skills = parsed.get("skills", [])
+        resume_exp = float(parsed.get("experience_years", 1))
+        resume_edu = parsed.get("education_level", "本科")
+
+        # 2. Neo4j 查目标岗位
+        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session() as session:
+            # 模糊匹配岗位名，取最像的一个（大小写不敏感）
+            job_node = session.run("""
+                MATCH (j:Job)
+                WHERE toLower(j.name) CONTAINS toLower($name)
+                   OR toLower($name) CONTAINS toLower(j.name)
+                RETURN j.name AS name
+                ORDER BY size(j.name) DESC
+                LIMIT 1
+            """, {"name": request.target_job}).single()
+
+            if not job_node:
+                driver.close()
+                return {
+                    "success": False,
+                    "message": f"图谱中未找到岗位: {request.target_job}",
+                }
+
+            matched_job = job_node["name"]
+
+            # 查 required 和 preferred 技能
+            skill_rows = session.run("""
+                MATCH (j:Job {name: $job_name})-[r:REQUIRES]->(s:Skill)
+                RETURN s.name AS name, r.importance AS importance
+            """, {"job_name": matched_job}).data()
+
+            required_skills = [r["name"] for r in skill_rows if r["importance"] == "required"]
+            preferred_skills = [r["name"] for r in skill_rows if r["importance"] == "preferred"]
+
+        driver.close()
+
+        # 2.5 从 PostgreSQL 聚合该岗位的典型经验/学历要求
+        import psycopg2
+        import re as _re
+
+        avg_exp = 1.0
+        edu_level = "本科"
+        try:
+            conn = psycopg2.connect(
+                host=POSTGRES_HOST, database=POSTGRES_DB,
+                user=POSTGRES_USER, password=POSTGRES_PASSWORD
+            )
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT experience_required, education_required
+                FROM job_postings
+                WHERE title LIKE %s OR title LIKE %s
+            """, (f"%{matched_job}%", f"%{matched_job[:5]}%"))
+            rows = cur.fetchall()
+            conn.close()
+
+            if rows:
+                # 经验：从字符串中提取数字，例如 "3-5年" → 3
+                exp_values = []
+                for exp_str, _ in rows:
+                    if exp_str:
+                        m = _re.search(r"(\d+)", str(exp_str))
+                        if m:
+                            exp_values.append(float(m.group(1)))
+                if exp_values:
+                    avg_exp = sum(exp_values) / len(exp_values)
+
+                # 学历：取出现次数最多的非空值
+                edu_counter: dict[str, int] = {}
+                for _, edu_str in rows:
+                    if edu_str and str(edu_str) in EDU_MAP:
+                        edu_counter[str(edu_str)] = edu_counter.get(str(edu_str), 0) + 1
+                if edu_counter:
+                    edu_level = max(edu_counter, key=edu_counter.get)  # type: ignore[arg-type]
+        except Exception as e:
+            logger.warning(f"读取 job_postings 经验/学历失败，使用默认值: {e}")
+
+        # 3. 算分
+        skill_score, matched, missing = _calculate_skill_score(
+            resume_skills, required_skills, preferred_skills
+        )
+        exp_score = _calculate_experience_score(resume_exp, avg_exp)
+        edu_score = _calculate_education_score(resume_edu, edu_level)
+
+        total = round(skill_score + exp_score + edu_score, 2)
+
+        return {
+            "success": True,
+            "data": {
+                "matched_job": matched_job,
+                "total_score": total,
+                "skill_score": skill_score,
+                "experience_score": exp_score,
+                "education_score": edu_score,
+                "resume_skills": resume_skills,
+                "matched_skills": matched,
+                "missing_skills": missing,
+                "required_skill_count": len(required_skills),
+                "matched_required_count": len([m for m in matched if m["importance"] == "required"]),
+            },
+        }
+    except Exception as e:
+        logger.error(f"简历匹配失败: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

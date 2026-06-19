@@ -15,6 +15,8 @@ import MockInterviewQA from './pages/student/MockInterviewQA.tsx'; // 模拟问�
 import MockInterviewRecord from './pages/student/MockInterviewRecord.tsx'; // 模拟面试录制页面
 import Resources from './pages/student/Resources.tsx' // 学习资源页面
 import Jobs from './pages/student/Jobs.tsx' // 招聘岗位页面
+import KnowledgeGraphPage from './pages/student/KnowledgeGraphPage.tsx' // 岗位能力知识图谱页面
+import JobMatchingPage from './pages/student/JobMatchingPage.tsx' // 人岗匹配页面
 import Login from './pages/auth/Login.tsx'
 import CompanyProfile from './pages/company/CompanyProfile.tsx'
 import CompanyJobs from './pages/company/CompanyJobs.tsx'
@@ -310,6 +312,30 @@ function App() {
                 <MainLayout>
                   <Content className="p-6">
                     <QA mode="history" />
+                  </Content>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/knowledge-graph"
+            element={
+              <ProtectedRoute userType="student">
+                <MainLayout>
+                  <Content className="p-6">
+                    <KnowledgeGraphPage />
+                  </Content>
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job-matching"
+            element={
+              <ProtectedRoute userType="student">
+                <MainLayout>
+                  <Content className="p-6">
+                    <JobMatchingPage />
                   </Content>
                 </MainLayout>
               </ProtectedRoute>
