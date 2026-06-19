@@ -52,9 +52,13 @@ venv/
 venvs/
 ENV/
 env/
+backend/venv/
+backend/crawler/venv/
 
 ### Node ###
 node_modules/
+frontend/node_modules/
+frontend2/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
