@@ -75,3 +75,7 @@ database/
 ### Docker ###
 docker-compose.yml
 .dockerignore
+
+### Project docs ###
+# 本地设计/计划文档，不上传到远程
+docs/
