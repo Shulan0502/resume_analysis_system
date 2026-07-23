@@ -149,8 +149,8 @@ export default function KnowledgeGraphPage() {
           if (d.data.type === 'Job') {
             return {
               size: 60,
-              fill: '#5B8FF9',
-              stroke: '#1E5BC6',
+              fill: '#176c4d',
+              stroke: '#0f4d38',
               lineWidth: 3,
               labelText: d.data.label,
               labelFill: '#fff',
@@ -162,8 +162,8 @@ export default function KnowledgeGraphPage() {
           // Skill 节点
           return {
             size: 36,
-            fill: d.data.importance === 'required' ? '#FF7875' : '#FFD666',
-            stroke: d.data.importance === 'required' ? '#D4380D' : '#D4880D',
+            fill: d.data.importance === 'required' ? '#8bd0ae' : '#f2d992',
+            stroke: d.data.importance === 'required' ? '#2f8a66' : '#b98327',
             lineWidth: 2,
             labelText: d.data.label,
             labelFill: '#333',
@@ -179,7 +179,7 @@ export default function KnowledgeGraphPage() {
       edge: {
         type: 'line',
         style: (d: any) => ({
-          stroke: d.data.importance === 'required' ? '#F5222D' : '#FAAD14',
+          stroke: d.data.importance === 'required' ? '#2f8a66' : '#c39431',
           lineWidth: d.data.importance === 'required' ? 2 : 1.5,
           opacity: 0.7,
           endArrow: true,
@@ -343,7 +343,7 @@ export default function KnowledgeGraphPage() {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-base font-semibold">{skillDetail.skill}</h3>
               <a
-                className="text-xs text-blue-500 cursor-pointer"
+                className="text-xs text-emerald-700 cursor-pointer"
                 onClick={() => setSkillDetail(null)}
               >
                 返回岗位

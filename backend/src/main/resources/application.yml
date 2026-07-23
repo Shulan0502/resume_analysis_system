@@ -19,10 +19,17 @@ spring:
       connection-init-sql: SET NAMES 'UTF8';
 
   jpa:
+    defer-datasource-initialization: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: true
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:learning-resources-schema.sql
+      data-locations: classpath:data.sql,classpath:learning-resources-data.sql
 
 logging:
   level:

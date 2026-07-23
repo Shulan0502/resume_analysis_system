@@ -285,7 +285,7 @@ const Jobs: React.FC = () => {
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-gray-800 mb-1">{job.title}</h3>
-            <p className="text-blue-600 font-medium">{job.companyName}</p>
+            <p className="text-emerald-700 font-medium">{job.companyName}</p>
           </div>
           <div className="flex flex-col items-end space-y-1">
             {job.isUrgent && <Tag color="red" icon={<FireOutlined />}>紧急</Tag>}
@@ -379,7 +379,7 @@ const Jobs: React.FC = () => {
         {/* 页面标题 */}
         <div className="mb-6 animate-slide-in-left">
           <h1 className="text-3xl font-bold text-gray-800 mb-4 flex items-center">
-            <svg className="w-10 h-10 mr-3 text-blue-600 animate-bounce" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-10 h-10 mr-3 text-emerald-700" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path d="M20 6h-4V4c0-1.103-.897-2-2-2h-4c-1.103 0-2 .897-2 2v2H4c-1.103 0-2 .897-2 2v11c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V8c0-1.103-.897-2-2-2zM10 4h4v2h-4V4zm10 15H4V8h16v11z"></path>
             </svg>
             求职市场
@@ -400,7 +400,7 @@ const Jobs: React.FC = () => {
                   <Button 
                     type="primary" 
                     icon={<SearchOutlined />} 
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 border-none hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+              className="bg-[#176c4d] border-none hover:bg-[#125a41] transition-all duration-300"
                   />
                 }
                 size="large"
@@ -472,14 +472,14 @@ const Jobs: React.FC = () => {
                   type="primary" 
                   size="large" 
                   onClick={handleSearch}
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 border-none hover:from-blue-600 hover:to-purple-700 transition-all duration-300 rounded-xl flex-1"
+                  className="bg-[#176c4d] border-none hover:bg-[#125a41] transition-all duration-300 rounded-xl flex-1"
                 >
                   搜索
                 </Button>
                 <Button 
                   size="large" 
                   onClick={handleReset}
-                  className="border-blue-500 text-blue-500 hover:bg-blue-50 transition-all duration-300 rounded-xl flex-1"
+                  className="border-emerald-700 text-emerald-700 hover:bg-emerald-50 transition-all duration-300 rounded-xl flex-1"
                 >
                   重置
                 </Button>
@@ -489,8 +489,8 @@ const Jobs: React.FC = () => {
 
           {/* 热门岗位和最新岗位 */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 border-l-4 border-red-500 animate-fade-in-up">
-              <h3 className="text-xl font-bold mb-4 flex items-center text-red-600">
+            <div className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 border-l-4 border-amber-500 animate-fade-in-up">
+              <h3 className="text-xl font-bold mb-4 flex items-center text-amber-700">
                 <FireOutlined className="mr-3 text-2xl" />
                 热门岗位
               </h3>
@@ -514,8 +514,8 @@ const Jobs: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 border-l-4 border-blue-500 animate-fade-in-up">
-              <h3 className="text-xl font-bold mb-4 flex items-center text-blue-600">
+            <div className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 border-l-4 border-emerald-600 animate-fade-in-up">
+              <h3 className="text-xl font-bold mb-4 flex items-center text-emerald-700">
                 <CalendarOutlined className="mr-3 text-2xl" />
                 最新岗位
               </h3>
@@ -586,7 +586,7 @@ const Jobs: React.FC = () => {
         <Modal
           title={
             <div className="flex items-center text-2xl font-bold text-gray-800">
-              <UserOutlined className="mr-3 text-blue-600" />
+              <UserOutlined className="mr-3 text-emerald-700" />
               岗位详情
             </div>
           }
@@ -603,7 +603,7 @@ const Jobs: React.FC = () => {
             <Button 
               key="apply" 
               type="primary" 
-              className="bg-gradient-to-r from-blue-500 to-purple-600 border-none hover:from-blue-600 hover:to-purple-700 transition-all duration-300 rounded-xl"
+              className="bg-[#176c4d] border-none hover:bg-[#125a41] transition-all duration-300 rounded-xl"
             >
               立即申请
             </Button>
@@ -615,7 +615,7 @@ const Jobs: React.FC = () => {
             <div className="space-y-6 animate-fade-in">
               <div className="text-center border-b pb-6">
                 <h2 className="text-3xl font-bold text-gray-800">{selectedJob.title}</h2>
-                <p className="text-xl text-blue-600 mt-3">{selectedJob.companyName}</p>
+                <p className="text-xl text-emerald-700 mt-3">{selectedJob.companyName}</p>
                 <div className="flex items-center justify-center space-x-4 mt-4">
                   {selectedJob.isUrgent && <Tag color="red" icon={<FireOutlined />}>紧急招聘</Tag>}
                   {selectedJob.isRemoteWork && <Tag color="green" icon={<HomeOutlined />}>支持远程</Tag>}
@@ -635,13 +635,13 @@ const Jobs: React.FC = () => {
                 <Descriptions.Item label="申请人数">{selectedJob.applicationCount}</Descriptions.Item>
               </Descriptions>
 
-              <div className="bg-blue-50 p-6 rounded-2xl">
-                <h4 className="font-bold text-lg mb-3 text-blue-800">岗位描述</h4>
+              <div className="bg-emerald-50 p-6 rounded-2xl">
+                <h4 className="font-bold text-lg mb-3 text-emerald-800">岗位描述</h4>
                 <p className="text-gray-700 whitespace-pre-wrap">{selectedJob.description}</p>
               </div>
 
-              <div className="bg-purple-50 p-6 rounded-2xl">
-                <h4 className="font-bold text-lg mb-3 text-purple-800">任职要求</h4>
+              <div className="bg-[#f7f4ed] p-6 rounded-2xl">
+                <h4 className="font-bold text-lg mb-3 text-[#695e41]">任职要求</h4>
                 <p className="text-gray-700 whitespace-pre-wrap">{selectedJob.requirements}</p>
               </div>
 

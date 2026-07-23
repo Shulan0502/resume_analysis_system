@@ -31,13 +31,13 @@ const generateMockMatchingData = () => {
 };
 
 const sectionColors = {
-  primary: '#1890ff',
-  success: '#52c41a',
-  warning: '#faad14',
+  primary: '#176c4d',
+  success: '#2f8a66',
+  warning: '#c38b2a',
   error: '#ff4d4f',
-  purple: '#722ed1',
-  cyan: '#13c2c2',
-  orange: '#fa8c16'
+  purple: '#547565',
+  cyan: '#2f7d6c',
+  orange: '#c7793f'
 };
 
 // 岗位匹配度统计图组件
@@ -97,8 +97,8 @@ const MatchingScoreChart = ({ data }: { data: any }) => {
     colorField: 'level',
     color: ({ level }: { level: string }) => {
       switch (level) {
-        case '优秀': return '#52c41a';
-        case '良好': return '#1890ff';
+        case '优秀': return '#2f8a66';
+        case '良好': return '#176c4d';
         case '一般': return '#faad14';
         case '待提升': return '#ff4d4f';
         default: return '#d9d9d9';
@@ -158,8 +158,8 @@ const MatchingScoreChart = ({ data }: { data: any }) => {
       title={<><BarChartOutlined className="mr-2" style={{ color: sectionColors.primary }} />岗位匹配度统计图</>}
       className="mb-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
       headStyle={{ 
-        background: 'linear-gradient(135deg, #e6f7ff 0%, #fff7e6 100%)',
-        borderBottom: '2px solid #91d5ff'
+        background: '#eef6f1',
+        borderBottom: '2px solid #a9d3be'
       }}
       bodyStyle={{ padding: '16px' }}
     >
@@ -219,14 +219,14 @@ const DimensionRadarChart = ({ data }: { data: any }) => {
     area: {
       smooth: true,
       style: {
-        fill: 'l(270) 0:#ffffff 1:#1890ff',
+        fill: 'l(270) 0:#ffffff 1:#176c4d',
         fillOpacity: 0.3,
       }
     },
     line: {
       smooth: true,
       style: {
-        stroke: '#1890ff',
+        stroke: '#176c4d',
         lineWidth: 2,
       }
     },
@@ -234,7 +234,7 @@ const DimensionRadarChart = ({ data }: { data: any }) => {
       size: 3,
       style: {
         fill: '#fff',
-        stroke: '#1890ff',
+        stroke: '#176c4d',
         lineWidth: 2,
       }
     },
@@ -274,8 +274,8 @@ const DimensionRadarChart = ({ data }: { data: any }) => {
       title={<><BarChartOutlined className="mr-2" style={{ color: sectionColors.purple }} />能力维度雷达图</>}
       className="mb-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
       headStyle={{ 
-        background: 'linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%)',
-        borderBottom: '2px solid #d3adf7'
+        background: '#f1f6f3',
+        borderBottom: '2px solid #a9cdb9'
       }}
       bodyStyle={{ padding: '16px' }}
     >
@@ -322,13 +322,13 @@ const OverallScoreDisplay = ({ data }: { data: any }) => {
   }
 
   scoreBreakdown = [
-    { type: '已获得分数', value: overallScore, color: '#52c41a' },
+    { type: '已获得分数', value: overallScore, color: '#2f8a66' },
     { type: '待提升空间', value: 100 - overallScore, color: '#f0f0f0' }
   ];
 
   const getScoreColor = (score: number) => {
-    if (score >= 90) return '#52c41a';
-    if (score >= 80) return '#1890ff';
+    if (score >= 90) return '#2f8a66';
+    if (score >= 80) return '#176c4d';
     if (score >= 70) return '#faad14';
     if (score >= 60) return '#fa8c16';
     return '#ff4d4f';
@@ -376,8 +376,8 @@ const OverallScoreDisplay = ({ data }: { data: any }) => {
   };
 
   const getScoreLevel = (score: number) => {
-    if (score >= 90) return { text: '优秀', color: '#52c41a', desc: '超越绝大多数候选人' };
-    if (score >= 80) return { text: '良好', color: '#1890ff', desc: '具备较强竞争力' };
+    if (score >= 90) return { text: '优秀', color: '#2f8a66', desc: '超越绝大多数候选人' };
+    if (score >= 80) return { text: '良好', color: '#176c4d', desc: '具备较强竞争力' };
     if (score >= 70) return { text: '中等', color: '#faad14', desc: '有一定优势' };
     if (score >= 60) return { text: '及格', color: '#fa8c16', desc: '需要继续提升' };
     return { text: '待提升', color: '#ff4d4f', desc: '建议针对性学习' };
@@ -391,8 +391,8 @@ const OverallScoreDisplay = ({ data }: { data: any }) => {
       title={<><SolutionOutlined className="mr-2" style={{ color: sectionColors.success }} />综合匹配度评分</>}
       className="mb-4 h-full rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300"
       headStyle={{ 
-        background: 'linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%)',
-        borderBottom: '2px solid #b7eb8f'
+        background: '#edf7f1',
+        borderBottom: '2px solid #a8d0b9'
       }}
       bodyStyle={{ padding: '16px' }}
     >
@@ -567,7 +567,7 @@ const FormattedAnalysisResult = ({ data }: { data: any }) => {
     <div className="p-2 sm:p-4 bg-white rounded-xl">
       <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
         <div className="flex items-center">
-          <div className="w-10 h-10 rounded-lg bg-indigo-600 flex items-center justify-center mr-3 shadow-indigo-200 shadow-lg">
+          <div className="w-10 h-10 rounded-lg bg-emerald-700 flex items-center justify-center mr-3 shadow-lg">
             <RocketOutlined className="text-white text-lg" />
           </div>
           <div>
@@ -579,7 +579,7 @@ const FormattedAnalysisResult = ({ data }: { data: any }) => {
           <Button 
             icon={<CopyOutlined />} 
             onClick={copyToClipboard}
-            className="rounded-full border-gray-200 hover:border-indigo-500 hover:text-indigo-600"
+            className="rounded-full border-gray-200 hover:border-emerald-600 hover:text-emerald-700"
           >
             导出文本
           </Button>
@@ -587,15 +587,15 @@ const FormattedAnalysisResult = ({ data }: { data: any }) => {
       </div>
 
       <div className="grid grid-cols-1 gap-1">
-        {renderSection('岗位匹配度', 岗位匹配度, <PieChartOutlined />, 'text-blue-600', 'bg-blue-50/40', 'border-blue-500')}
-        {renderSection('综合评估', 综合评估, <FileTextOutlined />, 'text-purple-600', 'bg-purple-50/40', 'border-purple-500')}
+        {renderSection('岗位匹配度', 岗位匹配度, <PieChartOutlined />, 'text-emerald-700', 'bg-emerald-50/40', 'border-emerald-600')}
+        {renderSection('综合评估', 综合评估, <FileTextOutlined />, 'text-[#547565]', 'bg-[#f1f6f3]', 'border-[#8db8a2]')}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
           {renderSection('亮点展示', 亮点, <TrophyOutlined />, 'text-emerald-600', 'bg-emerald-50/40', 'border-emerald-500')}
           {renderSection('待改进项', 待改进, <WarningOutlined />, 'text-orange-600', 'bg-orange-50/40', 'border-orange-500')}
         </div>
         
-        {renderSection('面试建议', 面试建议, <BulbOutlined />, 'text-cyan-600', 'bg-cyan-50/40', 'border-cyan-500')}
+        {renderSection('面试建议', 面试建议, <BulbOutlined />, 'text-teal-700', 'bg-teal-50/40', 'border-teal-600')}
       </div>
       
       <div className="mt-8 pt-6 border-t border-gray-100 text-center">
@@ -721,7 +721,7 @@ const ResumeAnalysis = () => {
   return (
     <div className="flex flex-col h-full pt-0 px-4 sm:px-8 pb-4 sm:pb-8 rounded-2xl">
       <div className="flex items-center mb-6">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center mr-4 shadow-lg">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mr-4 shadow-lg" style={{ background: '#176c4d' }}>
           <FileTextOutlined className="text-2xl text-white" />
         </div>
         <div>
@@ -731,13 +731,13 @@ const ResumeAnalysis = () => {
       </div>
       <Spin spinning={isSubmitting} tip="正在分析中，请稍候...">
         <Form form={form} onFinish={onFinish} layout="vertical" className="resume-form">
-          <Card className="mb-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300" headStyle={{ background: 'linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%)', borderBottom: '2px solid #91d5ff' }} title={<><SolutionOutlined className="mr-2" />岗位要求</>}>
+          <Card className="mb-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300" headStyle={{ background: '#eef6f1', borderBottom: '2px solid #a9d3be' }} title={<><SolutionOutlined className="mr-2" style={{ color: sectionColors.primary }} />岗位要求</>}>
             <Form.Item name="jobRequirements" rules={[{ required: true, message: '请输入岗位要求' }]}>
               <TextArea rows={6} placeholder="请输入岗位的详细要求，例如：&#10;• 所需技能（Python、React等）&#10;• 工作经验要求&#10;• 学历要求&#10;• 其他特殊要求" />
             </Form.Item>
           </Card>
 
-          <Card className="mb-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300" headStyle={{ background: 'linear-gradient(135deg, #f6ffed 0%, #f9f0ff 100%)', borderBottom: '2px solid #b7eb8f' }} title={<><FileTextOutlined className="mr-2" />简历信息</>}>
+          <Card className="mb-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300" headStyle={{ background: '#f3f7f4', borderBottom: '2px solid #b8d5c4' }} title={<><FileTextOutlined className="mr-2" style={{ color: sectionColors.primary }} />简历信息</>}>
             <Form.Item name="resumeInfo" rules={[({ getFieldValue }) => ({ validator(_, value) { if (value || getFieldValue('resumeFile')?.length > 0) return Promise.resolve(); return Promise.reject(new Error('请粘贴简历信息或上传简历文件')); }, })]}>
               <TextArea rows={8} placeholder="请在此处粘贴您的简历文本，或使用下方的上传功能。" />
             </Form.Item>
@@ -751,7 +751,7 @@ const ResumeAnalysis = () => {
 
           <Form.Item>
             <div className="space-y-3">
-              <Button type="primary" htmlType="submit" loading={isSubmitting} icon={<SendOutlined />} size="large" className="w-full h-12 text-base font-medium" style={{ background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)', border: 'none' }}>
+              <Button type="primary" htmlType="submit" loading={isSubmitting} icon={<SendOutlined />} size="large" className="w-full h-12 text-base font-medium" style={{ background: '#176c4d', border: 'none' }}>
                 开始智能分析
               </Button>
               <Button type="default" onClick={() => { 
@@ -796,7 +796,7 @@ const ResumeAnalysis = () => {
       {(analysisData || analysisResult) && (
         <div className="mt-8">
           <div className="flex items-center mb-4">
-            <BarChartOutlined className="text-xl mr-2" style={{ color: '#1890ff' }} />
+            <BarChartOutlined className="text-xl mr-2" style={{ color: '#176c4d' }} />
             <h2 className="text-xl font-bold text-gray-800 m-0">分析结果</h2>
           </div>
           <div className="mb-6">

@@ -116,7 +116,7 @@ export default function TrendAnalysisPage() {
                     title="热门技能数"
                     value={data.summary.total_skills}
                     prefix={<FireOutlined />}
-                    valueStyle={{ color: '#cf1322' }}
+                    valueStyle={{ color: '#176c4d' }}
                   />
                 </Col>
                 <Col span={6}>
@@ -124,7 +124,7 @@ export default function TrendAnalysisPage() {
                     title="技能关联关系"
                     value={data.summary.total_relations}
                     prefix={<ThunderboltOutlined />}
-                    valueStyle={{ color: '#faad14' }}
+                    valueStyle={{ color: '#c38b2a' }}
                   />
                 </Col>
                 <Col span={6}>
@@ -132,7 +132,7 @@ export default function TrendAnalysisPage() {
                     title="新兴岗位数"
                     value={data.summary.emerging_count}
                     prefix={<RocketOutlined />}
-                    valueStyle={{ color: '#52c41a' }}
+                    valueStyle={{ color: '#2f8a66' }}
                   />
                 </Col>
                 <Col span={6}>
@@ -140,7 +140,7 @@ export default function TrendAnalysisPage() {
                     title="AI智能解读"
                     value={aiLoading ? '生成中...' : aiInsight ? '已生成' : '未启用'}
                     prefix={<RobotOutlined />}
-                    valueStyle={{ color: aiLoading ? '#faad14' : aiInsight ? '#1890ff' : '#d9d9d9' }}
+                    valueStyle={{ color: aiLoading ? '#c38b2a' : aiInsight ? '#477e68' : '#9ba9a1' }}
                   />
                 </Col>
               </Row>
@@ -164,7 +164,7 @@ export default function TrendAnalysisPage() {
                                   width: 24,
                                   height: 24,
                                   borderRadius: '50%',
-                                  background: index < 3 ? '#ff4d4f' : '#1890ff',
+                                  background: index < 3 ? '#c38b2a' : '#2f7d63',
                                   color: 'white',
                                   display: 'flex',
                                   alignItems: 'center',
@@ -263,8 +263,8 @@ export default function TrendAnalysisPage() {
                   <Card
                     title={<><RobotOutlined /> AI 趋势解读</>}
                     style={{
-                      background: 'linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%)',
-                      border: '1px solid #adc6ff',
+                      background: '#eef6f1',
+                      border: '1px solid #b8d5c4',
                     }}
                   >
                     <Spin spinning={aiLoading} tip="AI 解读生成中...">

@@ -6,10 +6,14 @@
 
 ### 📁 data_import/ - 数据导入脚本（Neo4j 知识图谱）
 - `build_job_skill_graph.py` - ⭐ **主要脚本**：构建岗位-技能知识图谱到Neo4j
+- `seed_chinese_resource_catalog.py` - 重建中文视频、文章和练习资源目录
 - `import_job_data_fixed.sql` - 修复后的岗位数据批量导入（推荐使用）
 - `insert_jobs.sql` - 智能插入基础岗位数据（含用户创建）
 - `add_columns.sql` - 添加数据表字段
 - `import_data.py` - 数据导入主程序
+
+### 📁 crawlers/ - 公开学习资源采集
+- `crawl_chinese_learning_series.py` - 同步完整中文教程及其资源文件，按系列写入 PostgreSQL
 
 ### 📁 db_check/ - 数据库检查验证脚本
 - `check_db.py` - 检查用户和角色表结构与数据
@@ -49,6 +53,34 @@ python job_skill_graph_service.py &
 cd ..
 python scripts/data_import/build_job_skill_graph.py
 ```
+
+### 📚 学习资源采集
+
+```bash
+# 清理旧目录并写入中文视频、文章和练习资源
+python scripts/data_import/seed_chinese_resource_catalog.py
+```
+
+仓库初始化数据位于 `backend/src/main/resources/learning-resources-data.sql`。刷新本地系列后，可重新生成初始化数据：
+
+```bash
+python scripts/data_import/build_learning_resources_init.py
+```
+
+### 📖 中文 Markdown 学习系列
+
+```bash
+# 首次运行或更新：同步中文 Markdown 到 backend/learning_content/ 并更新数据库
+python scripts/crawlers/crawl_chinese_learning_series.py --init-db
+
+# 后续同步：只更新本地 Markdown 与目录数据
+python scripts/crawlers/crawl_chinese_learning_series.py
+
+# 仅预览某个系列可下载的章节数
+python scripts/crawlers/crawl_chinese_learning_series.py --series vue-zh-guide --dry-run
+```
+
+目前同步 Vue.js 中文文档、React 中文文档和 MDN 中文 Web 开发课程。应用阅读时由后端读取本地 Markdown 文件，不会请求 GitHub。
 
 **脚本功能：**
 - 从 PostgreSQL 读取岗位数据

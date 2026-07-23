@@ -67,7 +67,7 @@ code {
 }
 
 .chat-history-modal .ant-modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #17352d;
   border-bottom: none;
   padding: 20px 24px;
 }
@@ -111,7 +111,7 @@ code {
   background: linear-gradient(90deg, #f8fafc 0%, #e2e8f0 100%);
   border-radius: 8px;
   padding: 8px 12px;
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid #2f8a66;
 }
 
 /* 消息气泡样式增强 */
@@ -127,8 +127,8 @@ code {
 
 /* 用户消息气泡 */
 .chat-history-modal .user-message {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  background: #1b7051;
+  box-shadow: 0 2px 8px rgba(27, 112, 81, 0.22);
 }
 
 /* AI消息气泡 */
@@ -304,8 +304,72 @@ code {
 
 #root {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
 }
+
+/* Shared student workspace shell. */
+.app-shell { min-height: 100vh; background: #f4f6f4; }
+.app-sider.ant-layout-sider { position: sticky; top: 0; height: 100vh; background: #17352d !important; border-right: 1px solid #28483e; overflow: hidden; }
+.brand-lockup { height: 86px; padding: 20px 18px; color: #f5fbf7; display: flex; align-items: center; gap: 11px; border-bottom: 1px solid rgba(218, 246, 233, .14); white-space: nowrap; }
+.brand-mark { width: 34px; height: 34px; display: grid; place-items: center; background: #84dfb3; color: #14352c; border-radius: 5px; font-family: Georgia, serif; font-weight: 800; font-size: 19px; }
+.brand-lockup strong { display: block; font-size: 17px; letter-spacing: 1px; }.brand-lockup span { display: block; color: #9db8ae; font-size: 8px; letter-spacing: 1.2px; margin-top: 3px; }
+.app-menu.ant-menu { background: transparent; border: 0; padding: 16px 10px 20px; max-height: calc(100vh - 164px); overflow-y: auto; }.app-menu .ant-menu-item-group-title { color: #8ca89d; text-transform: uppercase; font-size: 10px; letter-spacing: 1.2px; padding: 16px 10px 6px; }.app-menu .ant-menu-item { color: #c8d8d1; height: 42px; line-height: 42px; margin: 2px 0; width: 100%; border-radius: 4px; font-weight: 600; font-size: 13px; }.app-menu .ant-menu-item .ant-menu-item-icon { font-size: 16px; }.app-menu .ant-menu-item-selected { background: #27624e !important; color: #f3fff8 !important; }.app-menu .ant-menu-item:hover { color: #fff !important; background: #204a3c !important; }
+.sider-bottom { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px; background: #143028; border-top: 1px solid rgba(218, 246, 233, .12); }.collapse-button { color: #a9c3b8 !important; margin-bottom: 8px; }.account-strip { display: flex; align-items: center; gap: 9px; color: #e6f2ed; }.account-avatar { background: #5fae89; }.account-name { min-width: 0; flex: 1; }.account-name strong, .account-name span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.account-name strong { font-size: 12px; }.account-name span { color: #98b4a9; font-size: 10px; margin-top: 2px; }.account-strip .ant-btn { color: #9db9ad; }
+.app-main { background: #f4f6f4; min-width: 0; }.app-content { padding: 26px 32px; min-height: 100vh; overflow-x: hidden; }
+@media (max-width: 680px) { .app-sider.ant-layout-sider { display: none; }.app-content { padding: 0; } }
+
+/* Legacy student pages share the same restrained workspace language. */
+.app-content { color: #263a30; }
+.app-content > .p-6 { padding: 0 !important; }
+.app-content .min-h-screen { min-height: calc(100vh - 52px); }
+.app-content .bg-gradient-to-r,
+.app-content .bg-gradient-to-br,
+.app-content .bg-gradient-to-b { background-image: none !important; background-color: transparent !important; }
+.app-content .bg-white,
+.app-content .ant-card { background: #fff !important; }
+.app-content .rounded-2xl,
+.app-content .rounded-3xl,
+.app-content .rounded-xl,
+.app-content .ant-card { border-radius: 8px !important; }
+.app-content .shadow,
+.app-content .shadow-md,
+.app-content .shadow-lg,
+.app-content .shadow-xl,
+.app-content .hover\:shadow-2xl:hover,
+.app-content .ant-card { box-shadow: 0 8px 24px rgba(31, 62, 48, .06) !important; }
+.app-content .ant-card { border-color: #dce6df; }
+.app-content .text-blue-400,
+.app-content .text-blue-500,
+.app-content .text-blue-600,
+.app-content .text-indigo-500,
+.app-content .text-indigo-600,
+.app-content .text-purple-400,
+.app-content .text-purple-500,
+.app-content .text-purple-600 { color: #176c4d !important; }
+.app-content .bg-blue-50,
+.app-content .bg-blue-100,
+.app-content .bg-indigo-50,
+.app-content .bg-purple-50,
+.app-content .bg-purple-100 { background-color: #edf5f0 !important; }
+.app-content .border-blue-100,
+.app-content .border-blue-200,
+.app-content .border-purple-100,
+.app-content .border-purple-200,
+.app-content .border-blue-500 { border-color: #6eaa8e !important; }
+.app-content button.bg-gradient-to-r,
+.app-content button.bg-gradient-to-br,
+.app-content .ant-btn.bg-gradient-to-r,
+.app-content .ant-btn.bg-gradient-to-br { color: #fff !important; background: #176c4d !important; border-color: #176c4d !important; }
+.app-content .min-h-screen > .relative:first-child { min-height: 190px; padding: 34px; background: #d7f5e9 !important; border: 1px solid #c3eadb; border-radius: 8px !important; }
+.app-content .hover\:text-blue-500:hover,
+.app-content .hover\:text-blue-600:hover { color: #125a41 !important; }
+.app-content .animate-bubble-float,
+.app-content .animate-line-stretch { display: none !important; }
+.app-content .ant-btn-primary { box-shadow: none; }
+.app-content .ant-input,
+.app-content .ant-input-affix-wrapper,
+.app-content .ant-select-selector { border-color: #d4dfd7 !important; }
+.app-content .ant-tabs-ink-bar { background: #176c4d; }
 
 @keyframes fade-in-up {
   0% {
@@ -326,7 +390,7 @@ code {
   transition: all 0.2s;
   border: 1.5px solid #e0e7ff !important;
   background: #f8fafc !important;
-  color: #6366f1 !important;
+  color: #176c4d !important;
   margin: 0 8px !important;
   border-radius: 1rem !important;
   box-shadow: 0 2px 8px 0 #e0e7ff33;
@@ -351,8 +415,8 @@ code {
   width: 100%;
 }
 .ant-radio-button-wrapper-checked.custom-radio-btn {
-  background: linear-gradient(90deg, #6366f1 0%, #a78bfa 100%) !important;
+  background: #176c4d !important;
   color: #fff !important;
-  border-color: #a78bfa !important;
-  box-shadow: 0 2px 8px 0 #a78bfa33;
+  border-color: #176c4d !important;
+  box-shadow: 0 2px 8px rgba(23, 108, 77, .18);
 }

@@ -53,7 +53,17 @@ const ProtectedRoute = ({ children, userType }: { children: React.ReactNode; use
 
 function App() {
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        token: {
+          colorPrimary: '#13714f',
+          colorInfo: '#13714f',
+          borderRadius: 6,
+          fontFamily: '"Noto Sans SC", "Microsoft YaHei", sans-serif',
+        },
+      }}
+    >
       <AntdApp>
         <Router>
           <Routes>

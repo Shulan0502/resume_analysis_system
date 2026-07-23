@@ -1,19 +1,22 @@
-import { Layout, Menu, Button, message } from 'antd'
+import { Layout, Menu, Button, Avatar, Tooltip, message } from 'antd'
 import {
-  HomeOutlined,
-  VideoCameraOutlined,
-  BarChartOutlined,
-  UserOutlined,
-  BulbOutlined,
-  LogoutOutlined,
-  ShopOutlined,
-  HistoryOutlined,
-  BookOutlined,
   ApartmentOutlined,
   AimOutlined,
+  BarChartOutlined,
+  BookOutlined,
+  HomeOutlined,
   LineChartOutlined,
+  LogoutOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  ReadOutlined,
+  RobotOutlined,
+  ShopOutlined,
+  UserOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useAuthStore } from '../stores/auth'
 
 const { Sider, Content } = Layout
@@ -22,13 +25,11 @@ interface MainLayoutProps {
   children: React.ReactNode
 }
 
-const LOGO_HEIGHT = 56
-const CONTENT_PADDING_LEFT = 24
-
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { logout } = useAuthStore()
+  const { logout, userInfo } = useAuthStore()
+  const [collapsed, setCollapsed] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -37,178 +38,45 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }
 
   const menuItems = [
-    {
-      key: '/home',
-      icon: <HomeOutlined />,
-      label: '首页',
-    },
-    {
-      key: '/qa',
-      icon: <BulbOutlined />,
-      label: '智能体问答',
-    },
-    {
-      key: '/history',
-      icon: <HistoryOutlined />,
-      label: '历史记录',
-    },
-    {
-      key: '/jobs',
-      icon: <ShopOutlined />,
-      label: '求职市场',
-    },
-    {
-      key: '/knowledge-graph',
-      icon: <ApartmentOutlined />,
-      label: '能力图谱',
-    },
-    {
-      key: '/job-matching',
-      icon: <AimOutlined />,
-      label: '人岗匹配',
-    },
-    {
-      key: '/trend-analysis',
-      icon: <LineChartOutlined />,
-      label: '趋势分析',
-    },
-    {
-      key: '/resume-analysis',
-      icon: <UserOutlined />,
-      label: '智能体简历分析',
-    },
-    {
-      key: '/interview',
-      icon: <VideoCameraOutlined />,
-      label: '智能模拟面试',
-    },
-    {
-      key: '/analysis',
-      icon: <BarChartOutlined />,
-      label: '面试分析结果',
-    },
-    {
-      key: '/resources',
-      icon: <BookOutlined />,
-      label: '学习资源推荐',
-    },
-    {
-      key: '/profile',
-      icon: <UserOutlined />,
-      label: '个人中心',
-    },
+    { type: 'group' as const, label: '工作台', children: [
+      { key: '/home', icon: <HomeOutlined />, label: '成长概览' },
+      { key: '/qa', icon: <RobotOutlined />, label: '求职问答' },
+    ] },
+    { type: 'group' as const, label: '求职准备', children: [
+      { key: '/jobs', icon: <ShopOutlined />, label: '求职市场' },
+      { key: '/knowledge-graph', icon: <ApartmentOutlined />, label: '能力图谱' },
+      { key: '/job-matching', icon: <AimOutlined />, label: '人岗匹配' },
+      { key: '/trend-analysis', icon: <LineChartOutlined />, label: '趋势分析' },
+    ] },
+    { type: 'group' as const, label: '练习与提升', children: [
+      { key: '/resume-analysis', icon: <ReadOutlined />, label: '简历分析' },
+      { key: '/interview', icon: <VideoCameraOutlined />, label: '模拟面试' },
+      { key: '/analysis', icon: <BarChartOutlined />, label: '面试报告' },
+      { key: '/resources', icon: <BookOutlined />, label: '学习资源' },
+    ] },
   ]
 
   return (
-    <Layout className="min-h-screen bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100">
-      <Sider
-        width={260}
-        trigger={null}
-        theme="light"
-        className="rounded-tr-[32px] rounded-br-[32px]"
-        style={{
-          background: '#fff',
-          borderRight: '1px solid #f0f0f0',
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          height: '100vh',
-          zIndex: 100,
-          overflow: 'hidden',
-        }}
-      >
-        {/* 顶部 Logo（固定顶部，paddingTop 48 在 Sider 内部实现） */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 48,
-            left: 0,
-            right: 0,
-            height: LOGO_HEIGHT,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontWeight: 'bold',
-            fontSize: 24,
-            letterSpacing: 2,
-            background: '#fff',
-            borderBottom: '1px solid #f0f0f0',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            zIndex: 2,
-          }}
-        >
-          <span
-            className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-pulse"
-          >
-            智能体面试评测
-          </span>
+    <Layout className="app-shell">
+      <Sider className="app-sider" width={248} collapsedWidth={76} collapsed={collapsed} trigger={null}>
+        <div className="brand-lockup">
+          <div className="brand-mark">M</div>
+          {!collapsed && <div><strong>面试罗盘</strong><span>CAREER COMPASS</span></div>}
         </div>
-
-        {/* 菜单区：top = 48+56 = 104，bottom = 88（给退出按钮留位） */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 48 + LOGO_HEIGHT,
-            left: 0,
-            right: 0,
-            bottom: 88,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-          }}
-        >
-          <Menu
-            theme="light"
-            mode="inline"
-            selectedKeys={[location.pathname]}
-            items={menuItems}
-            onClick={({ key }) => navigate(key)}
-            style={{
-              background: '#fff',
-              fontSize: 20,
-              paddingLeft: CONTENT_PADDING_LEFT,
-              borderInlineEnd: 'none',
-            }}
-            className="[&_.ant-menu-item]:mb-4 [&_.ant-menu-item]:!h-16 [&_.ant-menu-item]:flex [&_.ant-menu-item]:items-center [&_.ant-menu-item-icon]:text-xl"
-          />
-        </div>
-
-        {/* 退出按钮：固定左下角 */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 16,
-            left: 0,
-            right: 0,
-            background: '#fff',
-            borderTop: '1px solid #f0f0f0',
-            padding: '8px 0',
-          }}
-        >
-          <Button
-            type="text"
-            icon={<LogoutOutlined className="text-xl" />}
-            onClick={handleLogout}
-            className="w-full h-16 text-xl flex items-center justify-start text-gray-600 hover:text-red-500"
-            style={{ paddingLeft: CONTENT_PADDING_LEFT + 16 }}
-          >
-            退出登录
-          </Button>
+        <Menu className="app-menu" mode="inline" theme="dark" selectedKeys={[location.pathname]} items={menuItems} onClick={({ key }) => navigate(key)} />
+        <div className="sider-bottom">
+          <Tooltip title={collapsed ? '展开导航' : '收起导航'} placement="right">
+            <Button type="text" className="collapse-button" icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed(!collapsed)} />
+          </Tooltip>
+          <div className="account-strip">
+            <Avatar size={34} icon={<UserOutlined />} className="account-avatar" />
+            {!collapsed && <div className="account-name"><strong>{userInfo?.realName || userInfo?.username || '求职者'}</strong><span>学生端</span></div>}
+            {!collapsed && <Tooltip title="退出登录"><Button type="text" icon={<LogoutOutlined />} onClick={handleLogout} /></Tooltip>}
+          </div>
         </div>
       </Sider>
-      <Layout style={{ marginLeft: 260, background: 'transparent', height: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <Content
-          style={{
-            padding: 24,
-            background: 'transparent',
-            flex: '1 1 auto',
-            overflowY: 'auto',
-          }}
-          className="animate-fade-in-up"
-        >
-          {children}
-        </Content>
+      <Layout className="app-main">
+        <Content className="app-content">{children}</Content>
       </Layout>
     </Layout>
   )

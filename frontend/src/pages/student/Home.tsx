@@ -102,8 +102,8 @@ const Home = () => {
   const fetchResourceStats = async () => {
     try {
       const response = await getResourceStats(1) // 默认用户ID为1
-      if (response.success && response.data) {
-        setRecommendedResourcesCount(response.data.totalRecommendations || 12)
+      if (response.success) {
+        setRecommendedResourcesCount(response.totalResources || 0)
       }
     } catch (error) {
       console.error('获取资源统计失败:', error)

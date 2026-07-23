@@ -339,6 +339,21 @@ export const deleteSingleChatHistory = async (id: number) => {
 
 // ==================== 学习资源相关API ====================
 
+export const getLearningSeries = async () => {
+  const response = await api.get('/resource-series');
+  return response.data;
+};
+
+export const getLearningSeriesDetail = async (slug: string) => {
+  const response = await api.get(`/resource-series/${encodeURIComponent(slug)}`);
+  return response.data;
+};
+
+export const getLearningSeriesDocument = async (slug: string, documentId: number) => {
+  const response = await api.get(`/resource-series/${encodeURIComponent(slug)}/documents/${documentId}`);
+  return response.data;
+};
+
 // 获取所有学习资源
 export const getLearningResources = async (page: number = 1, size: number = 10) => {
   try {

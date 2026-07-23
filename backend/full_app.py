@@ -1,9 +1,13 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import uuid
 import psycopg2
 import hashlib
+from pathlib import Path
 
 app = Flask(__name__)
+LEARNING_CONTENT_ROOT = Path(__file__).resolve().parent / 'learning_content'
+LEARNING_SCHEMA_PATH = Path(__file__).resolve().parent / 'src' / 'main' / 'resources' / 'learning-resources-schema.sql'
+LEARNING_DATA_PATH = Path(__file__).resolve().parent / 'src' / 'main' / 'resources' / 'learning-resources-data.sql'
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -13,6 +17,22 @@ def get_db_connection():
         host='localhost'
     )
     return conn
+
+
+def initialize_learning_resources():
+    """Create and seed learning data only when a fresh database needs it."""
+    if not LEARNING_SCHEMA_PATH.is_file() or not LEARNING_DATA_PATH.is_file():
+        raise RuntimeError('学习资源初始化文件缺失')
+    conn = get_db_connection()
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(LEARNING_SCHEMA_PATH.read_text(encoding='utf-8'))
+            cur.execute('SELECT (SELECT COUNT(*) FROM learning_resources), (SELECT COUNT(*) FROM learning_resource_documents)')
+            resource_count, document_count = cur.fetchone()
+            if resource_count == 0 or document_count == 0:
+                cur.execute(LEARNING_DATA_PATH.read_text(encoding='utf-8'))
+    finally:
+        conn.close()
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -1073,5 +1093,189 @@ def analyze_job(job_name):
         return jsonify({'success': False, 'error': str(e)})
 
 
+# ==================== 本地学习系列与文档 API ====================
+@app.route('/api/resource-series', methods=['GET'])
+def get_resource_series():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT s.id, s.slug, s.title, s.provider, s.category, s.description,
+                   s.repository_url, s.source_site_url, s.language, COUNT(d.id)
+            FROM learning_resource_series s
+            LEFT JOIN learning_resource_documents d ON d.series_id = s.id
+            GROUP BY s.id
+            ORDER BY s.created_at ASC
+        ''')
+        series = [{
+            'id': row[0], 'slug': row[1], 'title': row[2], 'provider': row[3],
+            'category': row[4], 'description': row[5], 'repositoryUrl': row[6],
+            'sourceSiteUrl': row[7], 'language': row[8], 'documentCount': row[9]
+        } for row in cur.fetchall()]
+        return jsonify({'success': True, 'data': series})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/resource-series/<slug>', methods=['GET'])
+def get_resource_series_detail(slug):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT id, slug, title, provider, category, description, repository_url, source_site_url
+            FROM learning_resource_series WHERE slug = %s
+        ''', (slug,))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': '学习系列不存在'}), 404
+        cur.execute('''
+            SELECT id, title, relative_path, sort_order
+            FROM learning_resource_documents WHERE series_id = %s ORDER BY sort_order, id
+        ''', (row[0],))
+        documents = [{'id': doc[0], 'title': doc[1], 'path': doc[2], 'sortOrder': doc[3]} for doc in cur.fetchall()]
+        return jsonify({'success': True, 'data': {
+            'slug': row[1], 'title': row[2], 'provider': row[3], 'category': row[4],
+            'description': row[5], 'repositoryUrl': row[6], 'sourceSiteUrl': row[7], 'documents': documents
+        }})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/resource-series/<slug>/documents/<int:document_id>', methods=['GET'])
+def get_resource_document(slug, document_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT d.title, d.local_path, d.source_url
+            FROM learning_resource_documents d
+            JOIN learning_resource_series s ON s.id = d.series_id
+            WHERE s.slug = %s AND d.id = %s
+        ''', (slug, document_id))
+        row = cur.fetchone()
+        if not row:
+            return jsonify({'success': False, 'error': '文档不存在'}), 404
+        document_path = (LEARNING_CONTENT_ROOT / row[1]).resolve()
+        if LEARNING_CONTENT_ROOT not in document_path.parents or not document_path.is_file():
+            return jsonify({'success': False, 'error': '本地文档尚未同步'}), 404
+        return jsonify({'success': True, 'data': {
+            'title': row[0], 'content': document_path.read_text(encoding='utf-8'), 'sourceUrl': row[2]
+        }})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/resource-series/<slug>/assets/<path:asset_path>', methods=['GET'])
+def get_resource_asset(slug, asset_path):
+    series_root = (LEARNING_CONTENT_ROOT / slug).resolve()
+    asset = (series_root / asset_path).resolve()
+    if LEARNING_CONTENT_ROOT not in series_root.parents:
+        return jsonify({'success': False, 'error': '学习系列不存在'}), 404
+    if series_root not in asset.parents or not asset.is_file():
+        return jsonify({'success': False, 'error': '资源不存在'}), 404
+    return send_file(asset, conditional=True, max_age=86400)
+
+
+# ==================== 求职问答历史 API ====================
+def get_chat_user_id():
+    return request.args.get('userId', '1')
+
+
+@app.route('/api/chat/history', methods=['GET'])
+def get_chat_history():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT id, user_id, message_type, message_content, created_at, updated_at
+            FROM chat_history WHERE user_id = %s ORDER BY created_at ASC, id ASC
+        ''', (get_chat_user_id(),))
+        return jsonify([{
+            'id': row[0], 'userId': row[1], 'messageType': row[2], 'messageContent': row[3],
+            'createdAt': row[4].isoformat(), 'updatedAt': row[5].isoformat()
+        } for row in cur.fetchall()])
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/chat/history', methods=['DELETE'])
+def clear_chat_history():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('DELETE FROM chat_history WHERE user_id = %s', (get_chat_user_id(),))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/chat/history/<int:record_id>', methods=['DELETE'])
+def delete_chat_history(record_id):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('DELETE FROM chat_history WHERE id = %s AND user_id = %s', (record_id, get_chat_user_id()))
+        conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/api/chat/text', methods=['POST'])
+def chat_with_text():
+    data = request.get_json(silent=True) or {}
+    prompt = (data.get('message') or '').strip()
+    if not prompt:
+        return jsonify({'success': False, 'message': '请输入问题'}), 400
+    response_text = '已收到你的问题。请结合目标岗位、掌握技能和项目经历补充描述，我会据此帮你梳理准备重点。'
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        user_id = get_chat_user_id()
+        cur.execute('INSERT INTO chat_history (user_id, message_type, message_content) VALUES (%s, %s, %s)', (user_id, 'USER', prompt))
+        cur.execute('INSERT INTO chat_history (user_id, message_type, message_content) VALUES (%s, %s, %s)', (user_id, 'ASSISTANT', response_text))
+        conn.commit()
+        return jsonify({'success': True, 'response': response_text})
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
 if __name__ == '__main__':
+    initialize_learning_resources()
     app.run(port=8082, debug=False, threaded=False)
