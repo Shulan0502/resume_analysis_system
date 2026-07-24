@@ -1,13 +1,35 @@
 from flask import Flask, jsonify, request, send_file
 import uuid
+import os
+import json
 import psycopg2
 import hashlib
+import requests
 from pathlib import Path
+from dotenv import load_dotenv
+
+# 加载 .env（Coze 令牌等配置）
+load_dotenv(Path(__file__).resolve().parent / '.env')
 
 app = Flask(__name__)
 LEARNING_CONTENT_ROOT = Path(__file__).resolve().parent / 'learning_content'
 LEARNING_SCHEMA_PATH = Path(__file__).resolve().parent / 'src' / 'main' / 'resources' / 'learning-resources-schema.sql'
 LEARNING_DATA_PATH = Path(__file__).resolve().parent / 'src' / 'main' / 'resources' / 'learning-resources-data.sql'
+
+# ============================================================================
+# Coze（扣子）智能体工作流配置
+# ★ 拿到工作流「开始」节点的输入参数名后，只需改下方 COZE_INPUT_MODE / COZE_PARAM_* 即可跑通 ★
+# ============================================================================
+COZE_API_TOKEN = os.getenv('COZE_API_TOKEN', '')
+COZE_WORKFLOW_ID = os.getenv('COZE_WORKFLOW_ID', '')
+COZE_BASE_URL = os.getenv('COZE_BASE_URL', 'https://api.coze.cn').rstrip('/')
+# 输入模式：'text'=参数为文本；'file'=参数为文件（先上传拿 file_id 再传）
+COZE_INPUT_MODE = 'text'
+# 工作流「开始」节点的输入参数名（★待确认后填写★）
+COZE_PARAM_RESUME = 'input'   # 简历内容(或文件)对应的参数名
+COZE_PARAM_JOB = ''           # 岗位要求对应的参数名；无则留空不传
+COZE_OUTPUT_KEY = 'output'    # 工作流输出变量名（前端按 data->output 解析）
+
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -1274,6 +1296,89 @@ def chat_with_text():
     finally:
         if conn:
             conn.close()
+
+
+# ============================================================================
+# Coze 智能体：简历分析代理接口（/api/jianli/analyze）
+# 前端 ResumeAnalysis.tsx 按 response.data.data -> 解析 output -> 取岗位匹配度 渲染
+# ============================================================================
+def _coze_headers():
+    return {'Authorization': f'Bearer {COZE_API_TOKEN}'}
+
+
+def _coze_upload_file(file_storage):
+    """上传文件到 Coze，返回 file_id。"""
+    files = {'file': (file_storage.filename, file_storage.stream, file_storage.mimetype or 'application/octet-stream')}
+    resp = requests.post(f'{COZE_BASE_URL}/v1/files/upload', headers=_coze_headers(), files=files, timeout=90)
+    resp.raise_for_status()
+    body = resp.json()
+    if body.get('code') != 0:
+        raise RuntimeError(f"Coze 文件上传失败: {body.get('msg')}")
+    return body['data']['id']
+
+
+def _coze_run_workflow(parameters):
+    """调用 Coze 工作流，返回 requests 响应对象。"""
+    payload = {'workflow_id': COZE_WORKFLOW_ID, 'parameters': parameters}
+    return requests.post(
+        f'{COZE_BASE_URL}/v1/workflow/run',
+        headers={**_coze_headers(), 'Content-Type': 'application/json'},
+        data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
+        timeout=90,
+    )
+
+
+@app.route('/api/jianli/analyze', methods=['POST'])
+def analyze_resume():
+    if not COZE_API_TOKEN or not COZE_WORKFLOW_ID:
+        return jsonify({'error': 'Coze 配置缺失，请在 .env 设置 COZE_API_TOKEN 和 COZE_WORKFLOW_ID'}), 500
+
+    job_requirements = (request.form.get('jobRequirements') or '').strip()
+    resume_content = (request.form.get('resumeContent') or '').strip()
+    upload = request.files.get('file')
+
+    if not resume_content and not upload:
+        return jsonify({'error': '请粘贴简历信息或上传简历文件'}), 400
+
+    parameters = {}
+    if COZE_PARAM_JOB:
+        parameters[COZE_PARAM_JOB] = job_requirements
+
+    try:
+        if COZE_INPUT_MODE == 'file':
+            if not upload:
+                return jsonify({'error': '当前为文件模式，请上传简历文件'}), 400
+            file_id = _coze_upload_file(upload)
+            parameters[COZE_PARAM_RESUME] = {'file_id': file_id}
+        else:
+            text = resume_content
+            if not text and upload:
+                try:
+                    text = upload.read().decode('utf-8', errors='ignore')
+                except Exception:
+                    text = ''
+            if not text:
+                return jsonify({'error': '文本模式下请粘贴简历文本（或将 COZE_INPUT_MODE 改为 file 以直传文件）'}), 400
+            parameters[COZE_PARAM_RESUME] = text
+
+        resp = _coze_run_workflow(parameters)
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Coze 请求超时，请稍后重试'}), 504
+    except Exception as e:
+        return jsonify({'error': f'调用 Coze 失败: {e}'}), 502
+
+    if resp.status_code == 401:
+        return jsonify({'error': 'Coze 认证失败(401)，请检查 COZE_API_TOKEN'}), 401
+    try:
+        body = resp.json()
+    except Exception:
+        return jsonify({'error': f'Coze 返回非 JSON: {resp.text[:500]}'}), 502
+
+    if body.get('code') not in (0, None):
+        return jsonify({'error': f"Coze 执行失败: {body.get('msg')}", 'code': body.get('code')}), 502
+
+    # 原样透传 Coze 响应（含 data 字段），前端自行解析
+    return jsonify(body)
 
 
 if __name__ == '__main__':
