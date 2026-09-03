@@ -652,17 +652,85 @@ def _calculate_education_score(
     return round(min(r / q, 1) * 25, 2)
 
 
+def _extract_skills_keyword(resume_text: str, all_skills: list[str]) -> tuple[list[str], float, str]:
+    """
+    关键词匹配方案：当LLM不可用时的降级方案
+    从简历文本中匹配技能、提取经验年限和学历
+    """
+    import re
+
+    text_lower = resume_text.lower()
+    matched_skills = []
+
+    # 按技能名长度排序（长的先匹配，避免 "Java" 和 "JavaScript" 冲突）
+    sorted_skills = sorted(all_skills, key=len, reverse=True)
+    for skill in sorted_skills:
+        skill_lower = skill.lower()
+        # 检查技能名是否出现在简历中
+        if skill_lower in text_lower:
+            # 避免子串冲突：如果长技能已匹配，跳过其子串
+            already_covered = False
+            for existing in matched_skills:
+                if skill_lower in existing.lower() or existing.lower() in skill_lower:
+                    already_covered = True
+                    break
+            if not already_covered:
+                matched_skills.append(skill)
+
+    # 提取经验年限
+    exp_years = 1.0
+    exp_patterns = [
+        r'(\d+)\s*年\s*(?:工作|经验|经历|以上|以下|左右|及以上|及以下)?',
+        r'工作\s*(\d+)\s*年',
+        r'(\d+)\s*年\s*(?:开发|经验|从业|相关)',
+        r'(\d+)\s*years?\s*(?:of\s*)?(?:experience|work)',
+        r'experience\s*[:：]?\s*(\d+)\s*years?',
+    ]
+    for pat in exp_patterns:
+        m = re.search(pat, text_lower, re.IGNORECASE)
+        if m:
+            exp_years = float(m.group(1))
+            if exp_years < 1:
+                exp_years = 1.0
+            break
+
+    # 提取学历
+    edu_level = "本科"
+    edu_patterns = [
+        (r'(博士|硕士|本科|大专|高中|中专|技校|MBA|mba)', ['高中', '大专', '本科', '硕士', '博士']),
+        (r'(ph\.?d|doctor|master|bachelor|diploma|high\s*school)', None),
+    ]
+    edu_keywords = {
+        '博士': '博士', 'phd': '博士', 'ph.d': '博士', 'doctor': '博士',
+        '硕士': '硕士', 'master': '硕士', 'mba': '硕士',
+        '本科': '本科', 'bachelor': '本科', '学士': '本科', 'b.s': '本科', 'b.s.': '本科',
+        '大专': '大专', 'diploma': '大专', '专科': '大专', 'college': '大专',
+        '高中': '高中', 'high school': '高中', '中专': '高中', '技校': '高中',
+    }
+    for kw, mapped in edu_keywords.items():
+        if kw in text_lower:
+            edu_level = mapped
+            break
+
+    return matched_skills, exp_years, edu_level
+
+
 @app.post("/api/job-skill-graph/match-resume")
 async def match_resume(request: ResumeMatchRequest):
     """
     人岗匹配：给定目标岗位 + 简历文本，输出匹配分和缺口
     流程：
-      1. LLM 从简历抽技能/经验/学历
+      1. LLM 从简历抽技能/经验/学历（失败则降级为关键词匹配）
       2. Neo4j 查目标岗位的 required/preferred 技能
       3. 计算总分 = 技能 50% + 经验 25% + 学历 25%
     """
     try:
-        # 1. LLM 解析简历
+        resume_skills = []
+        resume_exp = 1.0
+        resume_edu = "本科"
+        llm_used = False
+
+        # 1. 尝试 LLM 解析简历
         llm_client = LLMClient()
         prompt = f"""你是简历解析专家。请从以下简历中提取结构化信息，严格按 JSON 格式返回，不要任何其他文字：
 
@@ -683,21 +751,35 @@ async def match_resume(request: ResumeMatchRequest):
 {request.resume_text}
 """
         messages = [{"role": "user", "content": prompt}]
-        response_text = await llm_client.achat_complete(messages, temperature=0.1)
+        try:
+            response_text = await llm_client.achat_complete(messages, temperature=0.1)
+            import json
+            cleaned = response_text.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("```", 2)[1]
+                if cleaned.startswith("json"):
+                    cleaned = cleaned[4:]
+                cleaned = cleaned.strip().rstrip("`").strip()
+            parsed = json.loads(cleaned)
+            resume_skills = parsed.get("skills", [])
+            resume_exp = float(parsed.get("experience_years", 1))
+            resume_edu = parsed.get("education_level", "本科")
+            llm_used = True
+        except Exception as llm_err:
+            logger.warning(f"LLM简历解析失败，降级为关键词匹配: {llm_err}")
 
-        import json
-        # 兼容 LLM 把 JSON 包在 ```json ... ``` 里的情况
-        cleaned = response_text.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.split("```", 2)[1]
-            if cleaned.startswith("json"):
-                cleaned = cleaned[4:]
-            cleaned = cleaned.strip().rstrip("`").strip()
-
-        parsed = json.loads(cleaned)
-        resume_skills = parsed.get("skills", [])
-        resume_exp = float(parsed.get("experience_years", 1))
-        resume_edu = parsed.get("education_level", "本科")
+        # 1.5 LLM 失败则降级为关键词匹配
+        if not llm_used or not resume_skills:
+            logger.info("使用关键词匹配方案提取简历技能")
+            driver_temp = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+            with driver_temp.session() as session_temp:
+                all_skill_rows = session_temp.run("MATCH (s:Skill) RETURN s.name AS name")
+                all_skills = [r["name"] for r in all_skill_rows]
+            driver_temp.close()
+            resume_skills, resume_exp, resume_edu = _extract_skills_keyword(
+                request.resume_text, all_skills
+            )
+            logger.info(f"关键词匹配结果: {len(resume_skills)}个技能, 经验={resume_exp}年, 学历={resume_edu}")
 
         # 2. Neo4j 查目标岗位
         driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
@@ -769,7 +851,7 @@ async def match_resume(request: ResumeMatchRequest):
                     if edu_str and str(edu_str) in EDU_MAP:
                         edu_counter[str(edu_str)] = edu_counter.get(str(edu_str), 0) + 1
                 if edu_counter:
-                    edu_level = max(edu_counter, key=edu_counter.get)  # type: ignore[arg-type]
+                    edu_level = max(edu_counter, key=edu_counter.get)
         except Exception as e:
             logger.warning(f"读取 job_postings 经验/学历失败，使用默认值: {e}")
 
@@ -795,10 +877,13 @@ async def match_resume(request: ResumeMatchRequest):
                 "missing_skills": missing,
                 "required_skill_count": len(required_skills),
                 "matched_required_count": len([m for m in matched if m["importance"] == "required"]),
+                "llm_used": llm_used,
             },
         }
     except Exception as e:
         logger.error(f"简历匹配失败: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

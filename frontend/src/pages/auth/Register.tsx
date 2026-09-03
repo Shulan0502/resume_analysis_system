@@ -1,10 +1,9 @@
-import { Form, Input, Button, message, Radio, Card, Select } from 'antd';
+import { Form, Input, Button, message, Radio, Select } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, BankOutlined, TeamOutlined, IdcardOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
-import { ConfigProvider } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
 import { useState } from 'react';
 import { register } from '@/services/api.ts';
+import './Auth.css';
 
 const { Option } = Select;
 
@@ -238,212 +237,91 @@ const Register = () => {
     }
   };
 
-  // Function to generate a random bubble element
-  const generateBubble = (index: number) => {
-    const size = Math.random() * 6 + 2;
-    const top = Math.random() * 100;
-    const left = Math.random() * 100;
-    const duration = Math.random() * 5 + 3;
-    const delay = Math.random() * 4;
-    const colorClasses = ['blue-300', 'pink-300', 'green-300', 'yellow-300', 'purple-300', 'red-300', 'teal-300', 'orange-300'];
-    const randomColorClass = colorClasses[Math.floor(Math.random() * colorClasses.length)];
-
-    return (
-      <div
-        key={index}
-        className={`absolute w-${size} h-${size} rounded-full bg-${randomColorClass} animate-bubble-float`}
-        style={{
-          top: `${top}%`,
-          left: `${left}%`,
-          animationDuration: `${duration}s`,
-          animationDelay: `${delay}s`,
-          width: `${size}px`,
-          height: `${size}px`,
-        }}
-      ></div>
-    );
-  };
-
-  // Generate bubbles
-  const numberOfBubbles = 60;
-  const bubbles = Array.from({ length: numberOfBubbles }).map((_, index) => generateBubble(index));
-
   return (
-    <ConfigProvider locale={zhCN}>
-      <div className="min-h-screen bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 flex items-center justify-center py-8">
-        <div className="w-full max-w-2xl p-4">
-          {/* Logo区域 */}
-          <div className="text-center mb-8">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="w-32 h-32 mx-auto mb-4 object-contain"
-            />
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">注册新账号</h1>
-            <p className="text-gray-600">加入学途智面-学生高校企业智联求职生态服务平台</p>
+    <main className="auth-shell">
+      <section className="auth-aside">
+        <div className="auth-brand">
+          <div className="brand-mark">M</div>
+          <div>
+            <strong>面试罗盘</strong>
+            <span>CAREER COMPASS</span>
           </div>
+        </div>
+        <div className="auth-message">
+          <span>JOIN THE PLATFORM</span>
+          <h1>开启你的<br />职业成长之旅。</h1>
+          <p>加入学途智面，连接岗位洞察、AI 面试与能力成长路径，让每一步求职准备都有迹可循。</p>
+        </div>
+        <div className="auth-grid" />
+      </section>
+      <section className="auth-form-side">
+        <div className="auth-form-wrap" style={{ width: 'min(460px, 100%)' }}>
+          <span className="eyebrow" style={{ color: '#8ce4b4', fontSize: 10, fontWeight: 800, letterSpacing: '1.6px' }}>CREATE ACCOUNT</span>
+          <h2 style={{ margin: '9px 0 8px', color: '#22352b', fontSize: 31 }}>注册新账号</h2>
+          <p style={{ margin: '0 0 27px', color: '#718077' }}>选择身份加入学途智面 · 面试罗盘求职生态平台。</p>
 
-          {/* 用户类型选择 */}
-          <div className="mb-6 flex justify-center">
-            <Radio.Group
-              value={userType}
-              onChange={(e) => setUserType(e.target.value)}
-              className="flex gap-4"
-              buttonStyle="solid"
-            >
-              <Radio.Button value="student" className="custom-radio-btn">
-                <span className="flex items-center justify-center gap-2">
-                  <UserOutlined />
-                  学生注册
-                </span>
-              </Radio.Button>
-              <Radio.Button value="school" className="custom-radio-btn">
-                <span className="flex items-center justify-center gap-2">
-                  <BankOutlined />
-                  学校注册
-                </span>
-              </Radio.Button>
-              <Radio.Button value="company" className="custom-radio-btn">
-                <span className="flex items-center justify-center gap-2">
-                  <TeamOutlined />
-                  企业注册
-                </span>
-              </Radio.Button>
-            </Radio.Group>
-          </div>
+          <Radio.Group
+            className="auth-role-tabs"
+            value={userType}
+            onChange={(e) => setUserType(e.target.value)}
+          >
+            <Radio.Button value="student"><UserOutlined />学生</Radio.Button>
+            <Radio.Button value="school"><BankOutlined />学校</Radio.Button>
+            <Radio.Button value="company"><TeamOutlined />企业</Radio.Button>
+          </Radio.Group>
 
-          {/* 注册表单 */}
-          <Card className="rounded-2xl shadow-lg">
-            <Form
-              form={form}
-              name="register"
-              onFinish={onFinish}
-              layout="vertical"
-              size="large"
-              scrollToFirstError
-            >
-              {/* 基本信息 */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">基本信息</h3>
-                
-                <Form.Item
-                  name="username"
-                  label="用户名"
-                  rules={[
-                    { required: true, message: '请输入用户名' },
-                    { min: 3, message: '用户名至少3位' },
-                    { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线' }
-                  ]}
-                >
-                  <Input
-                    prefix={<UserOutlined className="text-gray-400" />}
-                    placeholder="请输入用户名"
-                    className="rounded-lg"
-                  />
+          <Form form={form} name="register" onFinish={onFinish} layout="vertical" size="large" scrollToFirstError>
+            <div style={{ maxHeight: 'calc(100vh - 320px)', overflowY: 'auto', paddingRight: 8, marginBottom: 16 }}>
+              <div style={{ marginBottom: 20 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#4f6157', marginBottom: 12 }}>基本信息</h3>
+
+                <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }, { min: 3, message: '用户名至少3位' }, { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线' }]}>
+                  <Input prefix={<UserOutlined />} placeholder="请输入用户名" />
                 </Form.Item>
 
-                <Form.Item
-                  name="realName"
-                  label="真实姓名"
-                  rules={[{ required: true, message: '请输入真实姓名' }]}
-                >
-                  <Input
-                    prefix={<IdcardOutlined className="text-gray-400" />}
-                    placeholder="请输入真实姓名"
-                    className="rounded-lg"
-                  />
+                <Form.Item name="realName" label="真实姓名" rules={[{ required: true, message: '请输入真实姓名' }]}>
+                  <Input prefix={<IdcardOutlined />} placeholder="请输入真实姓名" />
                 </Form.Item>
 
-                <Form.Item
-                  name="email"
-                  label="邮箱地址"
-                  rules={[
-                    { required: true, message: '请输入邮箱地址' },
-                    { type: 'email', message: '请输入有效的邮箱地址' }
-                  ]}
-                >
-                  <Input
-                    prefix={<MailOutlined className="text-gray-400" />}
-                    placeholder="请输入邮箱地址"
-                    className="rounded-lg"
-                  />
+                <Form.Item name="email" label="邮箱地址" rules={[{ required: true, message: '请输入邮箱地址' }, { type: 'email', message: '请输入有效的邮箱地址' }]}>
+                  <Input prefix={<MailOutlined />} placeholder="请输入邮箱地址" />
                 </Form.Item>
 
-                <Form.Item
-                  name="phone"
-                  label="手机号码"
-                  rules={[
-                    { required: true, message: '请输入手机号码' },
-                    { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码' }
-                  ]}
-                >
-                  <Input
-                    prefix={<PhoneOutlined className="text-gray-400" />}
-                    placeholder="请输入手机号码"
-                    className="rounded-lg"
-                  />
+                <Form.Item name="phone" label="手机号码" rules={[{ required: true, message: '请输入手机号码' }, { pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号码' }]}>
+                  <Input prefix={<PhoneOutlined />} placeholder="请输入手机号码" />
                 </Form.Item>
 
-                <Form.Item
-                  name="password"
-                  label="密码"
-                  rules={passwordRules}
-                >
-                  <Input.Password
-                    prefix={<LockOutlined className="text-gray-400" />}
-                    placeholder="请输入密码"
-                    className="rounded-lg"
-                  />
+                <Form.Item name="password" label="密码" rules={passwordRules}>
+                  <Input.Password prefix={<LockOutlined />} placeholder="请输入密码" />
                 </Form.Item>
 
-                <Form.Item
-                  name="confirmPassword"
-                  label="确认密码"
-                  rules={confirmPasswordRules}
-                >
-                  <Input.Password
-                    prefix={<LockOutlined className="text-gray-400" />}
-                    placeholder="请再次输入密码"
-                    className="rounded-lg"
-                  />
+                <Form.Item name="confirmPassword" label="确认密码" rules={confirmPasswordRules}>
+                  <Input.Password prefix={<LockOutlined />} placeholder="请再次输入密码" />
                 </Form.Item>
               </div>
 
-              {/* 扩展信息 */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">
+              <div style={{ marginBottom: 8 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#4f6157', marginBottom: 12 }}>
                   {userType === 'student' ? '学生信息' : userType === 'school' ? '学校信息' : '企业信息'}
                 </h3>
                 {renderExtendedFields()}
               </div>
+            </div>
 
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={loading}
-                  className="w-full h-12 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                >
-                  {loading ? '注册中...' : '立即注册'}
-                </Button>
-              </Form.Item>
+            <Form.Item style={{ marginBottom: 8 }}>
+              <Button type="primary" htmlType="submit" loading={loading} className="auth-submit">
+                {loading ? '注册中...' : '立即注册'}
+              </Button>
+            </Form.Item>
 
-              <div className="text-center text-sm">
-                <span className="text-gray-600">已有账号？</span>
-                <Link to="/login" className="text-blue-500 hover:text-blue-600 ml-1">
-                  立即登录
-                </Link>
-              </div>
-            </Form>
-          </Card>
-
-          {/* 装饰性气泡 */}
-          <div className="fixed inset-0 pointer-events-none">
-            {bubbles}
-          </div>
+            <div className="auth-links" style={{ justifyContent: 'center' }}>
+              <span style={{ color: '#718077' }}>已有账号？</span>
+              <Link to="/login" style={{ color: '#197352', marginLeft: 4 }}>立即登录</Link>
+            </div>
+          </Form>
         </div>
-      </div>
-    </ConfigProvider>
+      </section>
+    </main>
   );
 };
 
